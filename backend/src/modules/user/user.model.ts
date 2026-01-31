@@ -1,12 +1,8 @@
-import { Schema, model } from "mongoose";
+import { ObjectId } from "mongodb";
 
-const userSchema = new Schema(
-  {
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    name: String,
-  },
-  { timestamps: true }
-);
-
-export const User = model("User", userSchema);
+export interface User {
+  _id?: ObjectId;
+  username: string;
+  email?: string;
+  createdAt: Date;
+}
