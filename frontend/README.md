@@ -1,31 +1,29 @@
 # JourneyHawk Frontend - UI Skeleton
 
-This is the **frontend UI skeleton** for JourneyHawk. All screens and navigation are complete, but the backend integration needs to be implemented.
+Frontend UI for JourneyHawk. All screens and navigation are complete. Backend integration needs implementation.
 
 ## What's Included
 
-### ✅ Complete UI Screens
-- **Authentication:** LoginScreen, SignUpScreen
-- **Home:** AccountScreen (with calendar), DashboardScreen
-- **Room Management:** RoomScreen, CreateRoomScreen, JoinRoomScreen
-- **Map:** MapRadarScreen (GPS tracking UI)
-- **Notifications:** NotificationsScreen
-- **Navigation:** AppNavigator, TabNavigator
+**Complete UI Screens:**
+- Authentication: LoginScreen, SignUpScreen
+- Home: AccountScreen (calendar), DashboardScreen
+- Room: RoomScreen, CreateRoomScreen, JoinRoomScreen
+- Map: MapRadarScreen (GPS tracking)
+- Notifications: NotificationsScreen
+- Navigation: AppNavigator, TabNavigator
 
-### ⚠️ TODO: Backend Integration Needed
-
-Your team needs to implement these files:
+**TODO - Backend Integration:**
 
 ```
 src/contexts/
-  ├── AuthContext.js      ← Implement authentication logic
-  ├── RoomContext.js      ← Implement room management logic
-  └── NotificationContext.js ← Implement notification logic
+  - AuthContext.js      (authentication logic)
+  - RoomContext.js      (room management)
+  - NotificationContext.js (notifications)
 
 src/services/
-  ├── api.js             ← Implement REST API calls (Axios)
-  ├── socket.js          ← Implement Socket.io for real-time updates
-  └── location.js        ← Implement GPS location tracking (Expo Location)
+  - api.js             (REST API with Axios)
+  - socket.js          (Socket.io real-time)
+  - location.js        (GPS tracking)
 ```
 
 ## Setup
@@ -33,70 +31,51 @@ src/services/
 ```bash
 cd frontend
 npm install
-```
-
-## Run the App
-
-```bash
-# Start with tunnel (works on any network)
 npm run tunnel
-
-# Or start normally
-npm start
 ```
 
-## Backend Integration Tasks
+## Backend Tasks
 
-### 1. AuthContext (src/contexts/AuthContext.js)
+### 1. AuthContext
+Implement:
+- signup(userData)
+- login(credentials)
+- logout()
+- getMe()
 
-Implement these functions:
-```javascript
-- signup(userData) → Register new user
-- login(credentials) → Login user
-- logout() → Logout user
-- getMe() → Get current user info
-```
+Endpoints:
+- POST /api/auth/signup
+- POST /api/auth/login
+- GET /api/auth/me
 
-Connect to backend endpoints:
-- `POST /api/auth/signup`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
+### 2. RoomContext
+Implement:
+- createRoom(roomData)
+- joinRoom(roomCode)
+- leaveRoom(roomId)
+- deleteRoom(roomId)
+- loadUserRooms()
 
-### 2. RoomContext (src/contexts/RoomContext.js)
+Endpoints:
+- POST /api/rooms/create
+- POST /api/rooms/join
+- PUT /api/rooms/:id/leave
+- DELETE /api/rooms/:id
+- GET /api/rooms/user/me
 
-Implement these functions:
-```javascript
-- createRoom(roomData) → Create a new room
-- joinRoom(roomCode) → Join room with code
-- leaveRoom(roomId) → Leave a room
-- deleteRoom(roomId) → Delete a room (host only)
-- loadUserRooms() → Get all user's rooms
-```
+### 3. NotificationContext
+Implement:
+- sendNotification(data)
+- markAsRead(id)
+- deleteNotification(id)
 
-Connect to backend endpoints:
-- `POST /api/rooms/create`
-- `POST /api/rooms/join`
-- `PUT /api/rooms/:id/leave`
-- `DELETE /api/rooms/:id`
-- `GET /api/rooms/user/me`
+Endpoints:
+- POST /api/notifications/send
+- PUT /api/notifications/:id/read
+- DELETE /api/notifications/:id
 
-### 3. NotificationContext (src/contexts/NotificationContext.js)
+### 4. API Service (api.js)
 
-Implement these functions:
-```javascript
-- sendNotification(data) → Send notification
-- markAsRead(id) → Mark notification as read
-- deleteNotification(id) → Delete notification
-```
-
-Connect to backend endpoints:
-- `POST /api/notifications/send`
-- `PUT /api/notifications/:id/read`
-- `DELETE /api/notifications/:id`
-
-### 4. API Service (src/services/api.js)
-
-Use Axios to create HTTP client:
 ```javascript
 import axios from 'axios';
 
@@ -105,7 +84,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Add JWT token interceptor
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync('userToken');
   if (token) {
@@ -115,9 +93,8 @@ api.interceptors.request.use(async (config) => {
 });
 ```
 
-### 5. Socket Service (src/services/socket.js)
+### 5. Socket Service (socket.js)
 
-Use Socket.io Client for real-time updates:
 ```javascript
 import { io } from 'socket.io-client';
 
@@ -139,15 +116,14 @@ class SocketService {
 }
 ```
 
-Events to listen for:
-- `location-update` → When someone's location updates
-- `user-joined` → When someone joins the room
-- `user-left` → When someone leaves the room
-- `new-notification` → When a notification is sent
+Socket events to implement:
+- location-update
+- user-joined
+- user-left
+- new-notification
 
-### 6. Location Service (src/services/location.js)
+### 6. Location Service (location.js)
 
-Use Expo Location:
 ```javascript
 import * as Location from 'expo-location';
 
@@ -171,9 +147,9 @@ export const startLocationTracking = async (callback) => {
 };
 ```
 
-## Google Maps API Key
+## Configuration
 
-Add your Google Maps API key to `app.json`:
+Add Google Maps API key to app.json:
 
 ```json
 {
@@ -181,7 +157,7 @@ Add your Google Maps API key to `app.json`:
     "android": {
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "apiKey": "YOUR_API_KEY"
         }
       }
     }
@@ -189,78 +165,37 @@ Add your Google Maps API key to `app.json`:
 }
 ```
 
-## Backend URL Configuration
-
-Update backend URL in:
-- `src/services/api.js` → API_URL
-- `src/services/socket.js` → SOCKET_URL
-
-## Screen Functionality
-
-### LoginScreen & SignUpScreen
-- Uses `useAuth()` hook for login/signup
-- Stores JWT token in SecureStore
-- Navigates to MainApp on success
-
-### AccountScreen
-- Shows calendar with upcoming events
-- Displays user info
-- Lists rooms from `useRoom()` hook
-
-### RoomScreen
-- Shows attendee list
-- Create/Join room buttons
-- Uses `useRoom()` hook
-
-### MapRadarScreen
-- Shows all attendee locations
-- Uses `Location.watchPositionAsync` for tracking
-- Sends updates via Socket.io
-
-### NotificationsScreen
-- Lists all notifications
-- Send notification form (hosts only)
-- Real-time updates via Socket.io
-
-## Dependencies Already Installed
-
-```json
-{
-  "expo-location": "~19.0.8",
-  "expo-secure-store": "~15.0.8",
-  "axios": "^1.13.2",
-  "socket.io-client": "^4.8.3",
-  "react-native-maps": "1.20.1"
-}
-```
+Update backend URLs in:
+- src/services/api.js
+- src/services/socket.js
 
 ## File Structure
 
 ```
 frontend/
 ├── src/
-│   ├── screens/          ✅ COMPLETE - All UI screens
-│   ├── navigation/       ✅ COMPLETE - Navigation setup
-│   ├── contexts/         ⚠️ TODO - Implement backend logic
-│   └── services/         ⚠️ TODO - Implement API/Socket/Location
-├── App.js               ✅ COMPLETE
-├── app.json            ⚠️ TODO - Add Google Maps API key
-└── package.json        ✅ COMPLETE
+│   ├── screens/          [COMPLETE] All UI screens
+│   ├── navigation/       [COMPLETE] Navigation setup
+│   ├── contexts/         [TODO] Backend logic
+│   └── services/         [TODO] API/Socket/Location
+├── App.js               [COMPLETE]
+├── app.json            [TODO] Add Google Maps key
+└── package.json        [COMPLETE]
+```
+
+## Dependencies Installed
+
+```
+expo-location, expo-secure-store, axios, socket.io-client, react-native-maps
 ```
 
 ## Testing
 
-1. Implement one context at a time (start with AuthContext)
-2. Test with placeholder data first
-3. Connect to backend once context logic works
-4. Test real-time features with 2 phones
+1. Implement AuthContext first
+2. Test with placeholder data
+3. Connect to backend
+4. Test with 2 phones for real-time features
 
 ## Contributors
 
-- Alexandro Nino (Frontend UI)
-- Arturo Roman Morales (Frontend UI)
-- [Your teammates] (Backend Integration)
-
-## Questions?
-
-If you have questions about the UI screens or how they should connect to the backend, contact Alexandro or Arturo.
+Alexandro Nino, Arturo Roman Morales
