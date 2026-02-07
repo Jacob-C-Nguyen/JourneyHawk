@@ -1,50 +1,266 @@
-# Welcome to your Expo app 👋
+# JourneyHawk Frontend - UI Skeleton
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the **frontend UI skeleton** for JourneyHawk. All screens and navigation are complete, but the backend integration needs to be implemented.
 
-## Get started
+## What's Included
 
-1. Install dependencies
+### ✅ Complete UI Screens
+- **Authentication:** LoginScreen, SignUpScreen
+- **Home:** AccountScreen (with calendar), DashboardScreen
+- **Room Management:** RoomScreen, CreateRoomScreen, JoinRoomScreen
+- **Map:** MapRadarScreen (GPS tracking UI)
+- **Notifications:** NotificationsScreen
+- **Navigation:** AppNavigator, TabNavigator
 
-   ```bash
-   npm install
-   ```
+### ⚠️ TODO: Backend Integration Needed
 
-2. Start the app
+Your team needs to implement these files:
 
-   ```bash
-   npx expo start
-   ```
+```
+src/contexts/
+  ├── AuthContext.js      ← Implement authentication logic
+  ├── RoomContext.js      ← Implement room management logic
+  └── NotificationContext.js ← Implement notification logic
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+src/services/
+  ├── api.js             ← Implement REST API calls (Axios)
+  ├── socket.js          ← Implement Socket.io for real-time updates
+  └── location.js        ← Implement GPS location tracking (Expo Location)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Setup
 
-## Learn more
+```bash
+cd frontend
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Run the App
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+# Start with tunnel (works on any network)
+npm run tunnel
 
-## Join the community
+# Or start normally
+npm start
+```
 
-Join our community of developers creating universal apps.
+## Backend Integration Tasks
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 1. AuthContext (src/contexts/AuthContext.js)
+
+Implement these functions:
+```javascript
+- signup(userData) → Register new user
+- login(credentials) → Login user
+- logout() → Logout user
+- getMe() → Get current user info
+```
+
+Connect to backend endpoints:
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+### 2. RoomContext (src/contexts/RoomContext.js)
+
+Implement these functions:
+```javascript
+- createRoom(roomData) → Create a new room
+- joinRoom(roomCode) → Join room with code
+- leaveRoom(roomId) → Leave a room
+- deleteRoom(roomId) → Delete a room (host only)
+- loadUserRooms() → Get all user's rooms
+```
+
+Connect to backend endpoints:
+- `POST /api/rooms/create`
+- `POST /api/rooms/join`
+- `PUT /api/rooms/:id/leave`
+- `DELETE /api/rooms/:id`
+- `GET /api/rooms/user/me`
+
+### 3. NotificationContext (src/contexts/NotificationContext.js)
+
+Implement these functions:
+```javascript
+- sendNotification(data) → Send notification
+- markAsRead(id) → Mark notification as read
+- deleteNotification(id) → Delete notification
+```
+
+Connect to backend endpoints:
+- `POST /api/notifications/send`
+- `PUT /api/notifications/:id/read`
+- `DELETE /api/notifications/:id`
+
+### 4. API Service (src/services/api.js)
+
+Use Axios to create HTTP client:
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'YOUR_BACKEND_URL/api',
+  headers: { 'Content-Type': 'application/json' }
+});
+
+// Add JWT token interceptor
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync('userToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+### 5. Socket Service (src/services/socket.js)
+
+Use Socket.io Client for real-time updates:
+```javascript
+import { io } from 'socket.io-client';
+
+class SocketService {
+  connect(token) {
+    this.socket = io('YOUR_BACKEND_URL', {
+      auth: { token },
+      transports: ['websocket']
+    });
+  }
+  
+  joinRoom(roomId) {
+    this.socket.emit('join-room', roomId);
+  }
+  
+  on(event, callback) {
+    this.socket.on(event, callback);
+  }
+}
+```
+
+Events to listen for:
+- `location-update` → When someone's location updates
+- `user-joined` → When someone joins the room
+- `user-left` → When someone leaves the room
+- `new-notification` → When a notification is sent
+
+### 6. Location Service (src/services/location.js)
+
+Use Expo Location:
+```javascript
+import * as Location from 'expo-location';
+
+export const requestLocationPermission = async () => {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  return status === 'granted';
+};
+
+export const getCurrentLocation = async () => {
+  const location = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.High
+  });
+  return location.coords;
+};
+
+export const startLocationTracking = async (callback) => {
+  return await Location.watchPositionAsync(
+    { accuracy: Location.Accuracy.High, distanceInterval: 10 },
+    callback
+  );
+};
+```
+
+## Google Maps API Key
+
+Add your Google Maps API key to `app.json`:
+
+```json
+{
+  "expo": {
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
+    }
+  }
+}
+```
+
+## Backend URL Configuration
+
+Update backend URL in:
+- `src/services/api.js` → API_URL
+- `src/services/socket.js` → SOCKET_URL
+
+## Screen Functionality
+
+### LoginScreen & SignUpScreen
+- Uses `useAuth()` hook for login/signup
+- Stores JWT token in SecureStore
+- Navigates to MainApp on success
+
+### AccountScreen
+- Shows calendar with upcoming events
+- Displays user info
+- Lists rooms from `useRoom()` hook
+
+### RoomScreen
+- Shows attendee list
+- Create/Join room buttons
+- Uses `useRoom()` hook
+
+### MapRadarScreen
+- Shows all attendee locations
+- Uses `Location.watchPositionAsync` for tracking
+- Sends updates via Socket.io
+
+### NotificationsScreen
+- Lists all notifications
+- Send notification form (hosts only)
+- Real-time updates via Socket.io
+
+## Dependencies Already Installed
+
+```json
+{
+  "expo-location": "~19.0.8",
+  "expo-secure-store": "~15.0.8",
+  "axios": "^1.13.2",
+  "socket.io-client": "^4.8.3",
+  "react-native-maps": "1.20.1"
+}
+```
+
+## File Structure
+
+```
+frontend/
+├── src/
+│   ├── screens/          ✅ COMPLETE - All UI screens
+│   ├── navigation/       ✅ COMPLETE - Navigation setup
+│   ├── contexts/         ⚠️ TODO - Implement backend logic
+│   └── services/         ⚠️ TODO - Implement API/Socket/Location
+├── App.js               ✅ COMPLETE
+├── app.json            ⚠️ TODO - Add Google Maps API key
+└── package.json        ✅ COMPLETE
+```
+
+## Testing
+
+1. Implement one context at a time (start with AuthContext)
+2. Test with placeholder data first
+3. Connect to backend once context logic works
+4. Test real-time features with 2 phones
+
+## Contributors
+
+- Alexandro Nino (Frontend UI)
+- Arturo Roman Morales (Frontend UI)
+- [Your teammates] (Backend Integration)
+
+## Questions?
+
+If you have questions about the UI screens or how they should connect to the backend, contact Alexandro or Arturo.
