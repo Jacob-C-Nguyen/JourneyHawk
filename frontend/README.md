@@ -1,201 +1,121 @@
-# JourneyHawk Frontend - UI Skeleton
+# JourneyHawk Frontend
 
-Frontend UI for JourneyHawk. All screens and navigation are complete. Backend integration needs implementation.
+All UI screens are done. Your job is to connect them to the backend.
 
-## What's Included
+## What Works Right Now
 
-**Complete UI Screens:**
-- Authentication: LoginScreen, SignUpScreen
-- Home: AccountScreen (calendar), DashboardScreen
-- Room: RoomScreen, CreateRoomScreen, JoinRoomScreen
-- Map: MapRadarScreen (GPS tracking)
-- Notifications: NotificationsScreen
-- Navigation: AppNavigator, TabNavigator
+All the screens are built and styled:
+- Login & Signup screens
+- Account screen with calendar
+- Room creation and joining screens
+- Map with GPS tracking UI
+- Notifications screen
 
-**TODO - Backend Integration:**
+Everything looks good, but nothing actually saves data or talks to a server yet.
 
-```
-src/contexts/
-  - AuthContext.js      (authentication logic)
-  - RoomContext.js      (room management)
-  - NotificationContext.js (notifications)
+## What You Need to Build
 
-src/services/
-  - api.js             (REST API with Axios)
-  - socket.js          (Socket.io real-time)
-  - location.js        (GPS tracking)
-```
+You need to implement 6 files that handle all the backend stuff:
 
-## Setup
+**Contexts** (manage app state):
+- src/contexts/AuthContext.js - login, signup, logout
+- src/contexts/RoomContext.js - create rooms, join rooms, manage attendees
+- src/contexts/NotificationContext.js - send and receive notifications
 
+**Services** (talk to backend):
+- src/services/api.js - HTTP requests to your REST API
+- src/services/socket.js - real-time updates with Socket.io
+- src/services/location.js - GPS location tracking
+
+Right now these files exist but they're just empty placeholders.
+
+## How to Get Started
+
+Install dependencies:
 ```bash
 cd frontend
 npm install
-npm run tunnel
 ```
 
-## Backend Tasks
+Run the app:
+```bash
+npm start
+```
 
-### 1. AuthContext
-Implement:
-- signup(userData)
-- login(credentials)
-- logout()
-- getMe()
+The app will launch and you can click around, but buttons won't do anything until you implement the backend connections.
 
-Endpoints:
+## Implementation Order
+
+Start with authentication, then build from there:
+
+1. Implement AuthContext - connect login/signup to your backend API
+2. Implement RoomContext - connect room creation/joining to your API
+3. Implement Socket Service - add real-time updates
+4. Implement Location Service - add GPS tracking
+5. Implement NotificationContext - add notifications
+
+## API Endpoints Needed
+
+Your backend needs these routes:
+
+Authentication:
 - POST /api/auth/signup
 - POST /api/auth/login
 - GET /api/auth/me
 
-### 2. RoomContext
-Implement:
-- createRoom(roomData)
-- joinRoom(roomCode)
-- leaveRoom(roomId)
-- deleteRoom(roomId)
-- loadUserRooms()
-
-Endpoints:
+Rooms:
 - POST /api/rooms/create
 - POST /api/rooms/join
+- GET /api/rooms/user/me
 - PUT /api/rooms/:id/leave
 - DELETE /api/rooms/:id
-- GET /api/rooms/user/me
 
-### 3. NotificationContext
-Implement:
-- sendNotification(data)
-- markAsRead(id)
-- deleteNotification(id)
-
-Endpoints:
+Notifications:
+- GET /api/notifications
 - POST /api/notifications/send
 - PUT /api/notifications/:id/read
 - DELETE /api/notifications/:id
 
-### 4. API Service (api.js)
+Location:
+- POST /api/location/update
+- GET /api/location/room/:roomId
 
-```javascript
-import axios from 'axios';
+## Socket Events Needed
 
-const api = axios.create({
-  baseURL: 'YOUR_BACKEND_URL/api',
-  headers: { 'Content-Type': 'application/json' }
-});
-
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('userToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-```
-
-### 5. Socket Service (socket.js)
-
-```javascript
-import { io } from 'socket.io-client';
-
-class SocketService {
-  connect(token) {
-    this.socket = io('YOUR_BACKEND_URL', {
-      auth: { token },
-      transports: ['websocket']
-    });
-  }
-  
-  joinRoom(roomId) {
-    this.socket.emit('join-room', roomId);
-  }
-  
-  on(event, callback) {
-    this.socket.on(event, callback);
-  }
-}
-```
-
-Socket events to implement:
-- location-update
-- user-joined
-- user-left
-- new-notification
-
-### 6. Location Service (location.js)
-
-```javascript
-import * as Location from 'expo-location';
-
-export const requestLocationPermission = async () => {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  return status === 'granted';
-};
-
-export const getCurrentLocation = async () => {
-  const location = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.High
-  });
-  return location.coords;
-};
-
-export const startLocationTracking = async (callback) => {
-  return await Location.watchPositionAsync(
-    { accuracy: Location.Accuracy.High, distanceInterval: 10 },
-    callback
-  );
-};
-```
+For real-time features, listen for these events:
+- location-update - when someone moves
+- user-joined - when someone joins a room
+- user-left - when someone leaves a room
+- new-notification - when a notification is sent
 
 ## Configuration
 
-Add Google Maps API key to app.json:
-
+Add your Google Maps API key in app.json:
 ```json
-{
-  "expo": {
-    "android": {
-      "config": {
-        "googleMaps": {
-          "apiKey": "YOUR_API_KEY"
-        }
-      }
+"android": {
+  "config": {
+    "googleMaps": {
+      "apiKey": "YOUR_KEY_HERE"
     }
   }
 }
 ```
 
-Update backend URLs in:
-- src/services/api.js
-- src/services/socket.js
+Update the backend URL in api.js and socket.js to point to your server.
 
 ## File Structure
 
 ```
 frontend/
 ├── src/
-│   ├── screens/          [COMPLETE] All UI screens
-│   ├── navigation/       [COMPLETE] Navigation setup
-│   ├── contexts/         [TODO] Backend logic
-│   └── services/         [TODO] API/Socket/Location
-├── App.js               [COMPLETE]
-├── app.json            [TODO] Add Google Maps key
-└── package.json        [COMPLETE]
+│   ├── screens/          - DONE (all UI screens)
+│   ├── navigation/       - DONE (navigation setup)
+│   ├── contexts/         - TODO (your job)
+│   └── services/         - TODO (your job)
+├── App.js               - DONE
+└── package.json         - DONE
 ```
 
-## Dependencies Installed
+## Questions?
 
-```
-expo-location, expo-secure-store, axios, socket.io-client, react-native-maps
-```
-
-## Testing
-
-1. Implement AuthContext first
-2. Test with placeholder data
-3. Connect to backend
-4. Test with 2 phones for real-time features
-
-## Contributors
-
-Alexandro Nino, Arturo Roman Morales
+The screens are already calling functions like login(), createRoom(), etc. You just need to make those functions actually work by connecting them to your backend.
