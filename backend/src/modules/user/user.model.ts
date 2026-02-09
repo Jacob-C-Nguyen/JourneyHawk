@@ -1,8 +1,9 @@
 import { ObjectId } from "mongodb";
 
-export interface User {
+export default interface User {
   _id?: ObjectId;
-  username: string;
   email?: string;
-  createdAt: Date;
+  username: string;
+  password: string;   //ENCRYPT AND HASH LATER
+  createdAt: number;
 }

@@ -4,16 +4,23 @@ import { env } from "./env";
 let client: MongoClient;
 let db: Db;
 
-export async function connectDB(): Promise<Db> {
+export async function connectDB() {
   if (db) return db;
 
-  client = new MongoClient(env.mongoUri);
-  await client.connect();
-
-  db = client.db(env.dbName);
-  console.log("MongoDB connected");
-
-  return db;
+  try 
+  {
+    client = new MongoClient(env.mongoUri);
+    await client.connect();
+    db = client.db(env.dbName);
+    await db.command({ ping: 1 });
+    console.log("MongoDB connected");
+    return db;
+  } 
+  catch (error)
+  {
+    console.log("There was an error connecting to the database.");
+    console.log(error);
+  }
 }
 
 export function getDB(): Db {

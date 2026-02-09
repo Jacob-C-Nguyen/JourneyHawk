@@ -1,2 +1,6 @@
 #environment variables
 .env
+
+#ignore everything created from ts
+dist/**/*
+node_modules/**/*

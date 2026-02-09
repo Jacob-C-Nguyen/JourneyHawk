@@ -3,9 +3,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const env = {
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 8080,
   mongoUri: process.env.MONGO_URI as string,
-  dbName: process.env.DB_NAME || "journeyhawk",
+  dbName: process.env.DB_NAME,
 };
 
 if (!env.mongoUri) {
