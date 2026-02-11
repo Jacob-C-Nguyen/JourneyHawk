@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "JourneyHawk",
+    "slug": "JourneyHawk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.journeyhawk.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "JourneyHawk needs your location to keep you safe during trips.",
+        "NSLocationAlwaysUsageDescription": "JourneyHawk needs your location to track your group even when the app is in the background.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "JourneyHawk needs your location to track your group for safety.",
+        "UIBackgroundModes": ["location"]
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.journeyhawk.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
+        }
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow JourneyHawk to track your location for safety during trips.",
+          "locationWhenInUsePermission": "Allow JourneyHawk to track your location while using the app.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
+    ]
+  }
+}
