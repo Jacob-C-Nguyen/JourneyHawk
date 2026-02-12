@@ -30,20 +30,22 @@ export default function MapRadarScreen() {
   // Check if current user is a host
   const isHost = user?.role === 'host';
 
-  // Set up callback for room deletion detection
+  // Set up callback for room deletion detection (attendees only)
   useEffect(() => {
-    LocationService.setOnRoomDeletedCallback(() => {
-      Alert.alert(
-        'Room Deleted',
-        'The host has ended this room. You have been automatically removed.',
-        [{ text: 'OK', onPress: handleRoomDeleted }]
-      );
-    });
+    if (!isHost) {
+      LocationService.setOnRoomDeletedCallback(() => {
+        Alert.alert(
+          'Room Deleted',
+          'The host has ended this room. You have been automatically removed.',
+          [{ text: 'OK', onPress: handleRoomDeleted }]
+        );
+      });
+    }
 
     return () => {
       LocationService.setOnRoomDeletedCallback(null);
     };
-  }, []);
+  }, [isHost]);
 
   useEffect(() => {
     if (activeRoom) {
@@ -505,7 +507,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   loadingText: {
     marginTop: 10,
@@ -534,7 +536,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
     padding: 30,
   },
   lockIcon: {
@@ -557,7 +559,7 @@ const styles = StyleSheet.create({
   lockedTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -628,7 +630,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0F172A',
     padding: 20,
   },
   radarCircle: {
@@ -681,7 +683,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 24,
-    color: '#666',
+    color: '#F1F5F9',
     marginBottom: 10,
   },
   placeholderSubtext: {
@@ -765,7 +767,7 @@ const styles = StyleSheet.create({
     right: 20,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#0F172A',
     padding: 15,
     borderRadius: 10,
     shadowColor: '#000',
@@ -788,6 +790,6 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 14,
-    color: '#333',
+    color: '#F1F5F9',
   },
 });

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom } from '../../contexts/RoomContext';
@@ -255,42 +256,41 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   header: {
+    backgroundColor: '#1E293B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    backgroundColor: '#007AFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 56,
+    paddingBottom: 24,
   },
   greeting: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#F1F5F9',
     marginBottom: 5,
   },
   date: {
     fontSize: 14,
-    color: '#fff',
-    opacity: 0.9,
+    color: '#94A3B8',
   },
   calendarSection: {
     padding: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 15,
-    color: '#333',
+    color: '#E2E8F0',
   },
   calendarCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E293B',
     borderRadius: 15,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   monthNavigation: {
     flexDirection: 'row',
@@ -304,17 +304,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 18,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#334155',
   },
   navButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#3B82F6',
     fontWeight: 'bold',
   },
   monthText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F1F5F9',
   },
   dayHeaders: {
     flexDirection: 'row',
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   dayHeaderText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
+    color: '#64748B',
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -349,11 +349,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   todayCircle: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
   },
   dayText: {
     fontSize: 15,
-    color: '#333',
+    color: '#CBD5E1',
   },
   todayText: {
     color: '#fff',
@@ -361,14 +361,14 @@ const styles = StyleSheet.create({
   },
   timeDisplay: {
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#334155',
     paddingTop: 15,
     alignItems: 'center',
   },
   timeText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#3B82F6',
     letterSpacing: 1,
   },
   eventsSection: {
@@ -376,10 +376,12 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   eventCard: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1E293B',
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   eventHeader: {
     flexDirection: 'row',
@@ -390,41 +392,41 @@ const styles = StyleSheet.create({
   eventName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F1F5F9',
     flex: 1,
   },
   eventBadge: {
     fontSize: 10,
     fontWeight: '700',
     color: '#fff',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   eventDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   eventTime: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   eventLocation: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
   },
   noEventsText: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 5,
     textAlign: 'center',
   },
   noEventsSubtext: {
     fontSize: 14,
-    color: '#999',
+    color: '#64748B',
     textAlign: 'center',
   },
   userInfoSection: {
@@ -436,34 +438,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#334155',
   },
   infoLabel: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
+    color: '#F1F5F9',
     fontWeight: '500',
   },
   roleTag: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     color: '#fff',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 5,
+    overflow: 'hidden',
   },
   logoutButton: {
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#EF4444',
     padding: 15,
     margin: 20,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: 'center',
   },
   logoutButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

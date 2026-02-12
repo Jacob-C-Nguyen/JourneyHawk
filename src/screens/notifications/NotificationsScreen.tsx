@@ -12,6 +12,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { notificationAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -326,7 +327,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   loadingContainer: {
     flex: 1,
@@ -337,26 +338,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    backgroundColor: '#007AFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 56,
+    paddingBottom: 24,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#F1F5F9',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#fff',
-    opacity: 0.9,
+    color: '#94A3B8',
     marginTop: 4,
   },
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -369,21 +372,19 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   notificationCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E293B',
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
     borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   unreadCard: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#172554',
+    borderColor: '#1E3A5F',
   },
   notificationContent: {
     flex: 1,
@@ -399,22 +400,22 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
   },
   notificationTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F1F5F9',
     marginBottom: 4,
   },
   notificationMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   senderText: {
     fontSize: 12,
-    color: '#999',
+    color: '#64748B',
     fontStyle: 'italic',
   },
   deleteButton: {
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     fontSize: 30,
-    color: '#999',
+    color: '#64748B',
     fontWeight: '300',
   },
   emptyContainer: {
@@ -434,12 +435,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#999',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#64748B',
     textAlign: 'center',
   },
   modalOverlay: {

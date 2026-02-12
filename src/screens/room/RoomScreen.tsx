@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom } from '../../contexts/RoomContext';
@@ -60,7 +61,7 @@ export default function RoomScreen({ navigation, route }) {
                 // Reload rooms
                 await loadUserRooms();
                 
-                Alert.alert('Success', 'Room deleted successfully');
+                Alert.alert('Room Deleted', 'The room and all attendees have been removed.');
               } catch (error) {
                 console.error('Error deleting room:', error);
                 Alert.alert('Error', 'Failed to delete room');
@@ -281,39 +282,37 @@ export default function RoomScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   header: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#1E293B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 15,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 56,
+    paddingBottom: 24,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#F1F5F9',
     marginBottom: 5,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#fff',
-    opacity: 0.9,
+    color: '#94A3B8',
   },
   roomCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E293B',
     marginHorizontal: 15,
     marginVertical: 8,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   selectedRoomCard: {
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: '#3B82F6',
   },
   roomCardContent: {
     padding: 15,
@@ -327,11 +326,11 @@ const styles = StyleSheet.create({
   roomCardName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#F1F5F9',
     flex: 1,
   },
   hostBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -343,22 +342,22 @@ const styles = StyleSheet.create({
   },
   roomCardCode: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   roomCardDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   roomCardAttendees: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 8,
   },
   roomCardNotes: {
     fontSize: 13,
-    color: '#666',
+    color: '#94A3B8',
     fontStyle: 'italic',
     marginBottom: 8,
     lineHeight: 18,
@@ -375,7 +374,7 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#94A3B8',
     marginBottom: 6,
   },
   trackingBadgeSmall: {
@@ -397,7 +396,7 @@ const styles = StyleSheet.create({
   },
   trackingTextSmall: {
     fontSize: 12,
-    color: '#333',
+    color: '#E2E8F0',
     fontWeight: '600',
   },
   selectedIndicator: {
@@ -414,7 +413,7 @@ const styles = StyleSheet.create({
   roomCardActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#334155',
     padding: 10,
   },
   actionButton: {
@@ -422,30 +421,30 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#334155',
     marginHorizontal: 5,
     alignItems: 'center',
   },
   dangerButton: {
-    backgroundColor: '#ffebee',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#3B82F6',
   },
   dangerButtonText: {
-    color: '#d32f2f',
+    color: '#EF4444',
   },
   bottomActions: {
     padding: 15,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderTopColor: '#334155',
+    backgroundColor: '#0F172A',
     alignItems: 'center',
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 10,
@@ -459,13 +458,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#3B82F6',
     marginTop: 10,
   },
   secondaryButtonText: {
-    color: '#007AFF',
+    color: '#3B82F6',
   },
   roomName: {
     fontSize: 24,
@@ -512,14 +511,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#E2E8F0',
   },
   addButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -532,24 +531,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1E293B',
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   attendeeName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F1F5F9',
     marginBottom: 4,
   },
   attendeeEmail: {
     fontSize: 14,
-    color: '#666',
+    color: '#94A3B8',
   },
   attendeeRole: {
     fontSize: 12,
-    color: '#007AFF',
+    color: '#3B82F6',
     marginTop: 4,
     fontWeight: '600',
   },
@@ -558,16 +559,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#3B82F6',
   },
   detailButtonText: {
-    color: '#007AFF',
+    color: '#3B82F6',
     fontSize: 14,
     fontWeight: '600',
   },
   emptyText: {
     textAlign: 'center',
-    color: '#999',
+    color: '#64748B',
     marginTop: 20,
   },
   leaveButton: {
@@ -593,13 +594,13 @@ const styles = StyleSheet.create({
   },
   noRoomTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '800',
+    color: '#F1F5F9',
     marginBottom: 10,
   },
   noRoomSubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#94A3B8',
     textAlign: 'center',
     marginBottom: 40,
   },

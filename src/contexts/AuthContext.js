@@ -68,10 +68,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (credentials) => {
+  const login = async (credentials, expectedRole) => {
     try {
       setError(null);
       const response = await authAPI.login(credentials);
+      
+      // Role-based access check
+      if (expectedRole && response.data.role !== expectedRole) {
+        const roleName = expectedRole === 'host' ? 'Host / Chaperone' : 'Attendee';
+        const actualRole = response.data.role === 'host' ? 'Host / Chaperone' : 'Attendee';
+        const errorMessage = `This account is registered as ${actualRole}. Please go back and select the correct role.`;
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
       
       // Store token securely
       await SecureStore.setItemAsync('userToken', response.data.token);

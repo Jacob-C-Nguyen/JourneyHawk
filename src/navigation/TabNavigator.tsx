@@ -36,13 +36,21 @@ export default function TabNavigator() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: '#999',
+
+          // 🔥 Match your blue
+          tabBarActiveTintColor: '#3B82F6',
+          tabBarInactiveTintColor: '#64748B',
+
+          // 🔥 Dark background
           tabBarStyle: {
+            backgroundColor: '#1E293B',
+            borderTopColor: '#334155',
+            borderTopWidth: 1,
             paddingBottom: Platform.OS === 'android' ? 5 + insets.bottom : 5,
             paddingTop: 5,
             height: Platform.OS === 'android' ? 60 + insets.bottom : 60,
           },
+
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',

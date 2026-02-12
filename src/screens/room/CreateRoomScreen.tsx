@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  StatusBar,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { roomAPI } from '../../services/api';
@@ -124,6 +125,7 @@ export default function CreateRoomScreen() {
         <TextInput
           style={styles.input}
           placeholder="e.g., Geology Field Trip"
+          placeholderTextColor="#64748B"
           value={name}
           onChangeText={setName}
         />
@@ -132,6 +134,7 @@ export default function CreateRoomScreen() {
         <TextInput
           style={styles.input}
           placeholder="e.g., Yosemite National Park"
+          placeholderTextColor="#64748B"
           value={location}
           onChangeText={setLocation}
         />
@@ -261,6 +264,7 @@ export default function CreateRoomScreen() {
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Any additional information..."
+          placeholderTextColor="#64748B"
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -320,23 +324,25 @@ export default function CreateRoomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   header: {
+    backgroundColor: '#1E293B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 15,
-    paddingBottom: 20,
-    backgroundColor: '#007AFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 56,
+    paddingBottom: 24,
   },
   backButton: {
-    color: '#fff',
+    color: '#CBD5E1',
     fontSize: 16,
-    paddingVertical: 20,
+    paddingVertical: 12,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#F1F5F9',
   },
   form: {
     padding: 20,
@@ -344,17 +350,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#94A3B8',
     marginBottom: 8,
     marginTop: 15,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
+    borderColor: '#334155',
+    borderRadius: 14,
     padding: 15,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1E293B',
+    color: '#F1F5F9',
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -363,14 +370,14 @@ const styles = StyleSheet.create({
   dateTimeButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#007AFF',
-    borderRadius: 10,
+    borderColor: '#334155',
+    borderRadius: 14,
     padding: 15,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#1E293B',
   },
   dateTimeButtonText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#3B82F6',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -384,7 +391,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: '#3B82F6',
     borderRadius: 5,
     marginRight: 10,
     justifyContent: 'center',
@@ -393,19 +400,19 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     width: 14,
     height: 14,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#3B82F6',
     borderRadius: 3,
   },
   checkboxLabel: {
     fontSize: 16,
-    color: '#333',
+    color: '#E2E8F0',
   },
   textArea: {
     height: 100,
   },
   helperText: {
     fontSize: 13,
-    color: '#666',
+    color: '#64748B',
     marginTop: 5,
     marginBottom: 10,
   },
@@ -413,15 +420,15 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   createButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#3B82F6',
+    padding: 17,
+    borderRadius: 14,
     alignItems: 'center',
     marginTop: 30,
     marginBottom: 40,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#334155',
   },
   createButtonText: {
     color: '#fff',

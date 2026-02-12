@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { roomAPI } from '../../services/api';
 import { useRoom } from '../../contexts/RoomContext';
@@ -96,23 +97,25 @@ export default function JoinRoomScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0F172A',
   },
   header: {
+    backgroundColor: '#1E293B',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 50 : 15,
-    paddingBottom: 20,
-    backgroundColor: '#007AFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 56,
+    paddingBottom: 24,
   },
   backButton: {
-    color: '#fff',
+    color: '#CBD5E1',
     fontSize: 16,
-    paddingVertical: 20,
+    paddingVertical: 12,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '800',
+    color: '#F1F5F9',
   },
   content: {
     flex: 1,
@@ -121,36 +124,37 @@ const styles = StyleSheet.create({
   },
   instruction: {
     fontSize: 18,
-    color: '#333',
+    color: '#94A3B8',
     textAlign: 'center',
     marginBottom: 30,
   },
   input: {
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 14,
     padding: 20,
     fontSize: 24,
     textAlign: 'center',
     fontWeight: 'bold',
     letterSpacing: 4,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1E293B',
+    color: '#F1F5F9',
   },
   hint: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748B',
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 40,
   },
   joinButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#3B82F6',
+    padding: 17,
+    borderRadius: 14,
     alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#334155',
   },
   joinButtonText: {
     color: '#fff',
