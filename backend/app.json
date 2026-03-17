@@ -1,0 +1,17 @@
+{
+  "android": {
+    "package": "com.anonymous.journeyhawkbackend"
+  },
+  "ios": {
+    "bundleIdentifier": "com.anonymous.journeyhawkbackend",
+    "infoPlist": {
+      "NSLocalNetworkUsageDescription": "Allow this app to connect to the development server on your local network."
+    }
+  },
+  "extra": {
+    "eas": {
+      "projectId": "a4514110-9ade-46b3-baf1-045779f6f75f"
+    }
+  },
+  "owner": "imnotogimoj"
+}
