@@ -1,4 +1,11 @@
 // src/screens/notifications/NotificationsScreen.js
+// Functional Req 6: Takes users to notification screen when clicking the notification tab
+// Functional Req 7: Allows users to send a new notification via "+" button (host only)
+// Functional Req 19: Notifications displayed with type filtering (message, alert, location_alert)
+// - Real-time notification updates via Socket.io
+// - Color-coded cards with title, description, timestamp, and sender
+// - Mark as read and delete functionality
+// - Send notification modal for hosts with type selection
 import React, { useState, useEffect } from 'react';
 import {
   View,

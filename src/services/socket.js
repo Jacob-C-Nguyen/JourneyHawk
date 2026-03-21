@@ -3,10 +3,10 @@ import { io } from 'socket.io-client';
 
 // Backend Socket URL
 // DEVELOPMENT: Set to false to use Railway, true to use local backend
-const USE_LOCAL_BACKEND = false;  // Change to true for local testing
+const USE_LOCAL_BACKEND = true;  // Change to true for local testing
 
 const API_URL = USE_LOCAL_BACKEND
-  ? 'http://192.168.1.21:3000'  // Local development
+  ? 'http://192.168.1.7:3000'  // Local development
   : 'https://journeyhawk-production.up.railway.app';  // Railway production
 
 class SocketService {

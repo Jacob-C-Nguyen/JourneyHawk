@@ -1,4 +1,12 @@
 // src/screens/map/MapRadarScreen.js
+// Functional Req 8: Displays map showing user locations when clicking map icon
+// Functional Req 9: Search bar to find individual attendee by name, phone, or email
+// - Role-based visibility: attendees see only hosts, hosts see everyone
+// - Real-time location updates via Socket.io
+// - Radar circles around user position
+// - Color-coded markers (blue=host, green=attendee, orange=away, red=outside geofence)
+// - Auto-zoom to searched person
+// - GPS locked view when event hasn't started yet
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import {
   View,
@@ -292,7 +300,7 @@ export default function MapRadarScreen() {
           <View style={styles.radarRing3} />
         </View>
 
-        <Text style={styles.placeholderText}>📍 GPS Map View</Text>
+        <Text style={styles.placeholderText}>GPS Map View</Text>
         <Text style={styles.placeholderSubtext}>
           Real-time location tracking will appear here
         </Text>
@@ -305,7 +313,7 @@ export default function MapRadarScreen() {
             <Text style={styles.legendText}>You (Host)</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#34c759' }]} />
+            <View style={[styles.legendDot, { backgroundColor: '#c73434' }]} />
             <Text style={styles.legendText}>Attendees</Text>
           </View>
         </View>
@@ -490,7 +498,7 @@ export default function MapRadarScreen() {
         </View>
         {isHost && (
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#34c759' }]} />
+            <View style={[styles.legendDot, { backgroundColor: '#c73434' }]} />
             <Text style={styles.legendText}>Attendees</Text>
           </View>
         )}

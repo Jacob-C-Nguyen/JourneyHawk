@@ -1,13 +1,19 @@
 // src/services/api.js
+// Core API service - all backend communication flows through here
+// - Axios instance with JWT token auto-injection via interceptor
+// - Auth API: signup (Req 3), login (Req 2)
+// - Room API: create (Req 15, 18), join (Req 13, 14), leave (Req 12), getUserRooms (Req 10)
+// - Location API: update (Req 8), getRoomLocations (Req 9)
+// - Notification API: getAll (Req 6), sendToRoom (Req 7), markAsRead, delete
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Backend API URL
 // DEVELOPMENT: Set to false to use Railway, true to use local backend
-const USE_LOCAL_BACKEND = false;  // Change to true for local testing
+const USE_LOCAL_BACKEND = true;  // Change to true for local testing
 
 const API_URL = USE_LOCAL_BACKEND
-  ? 'http://192.168.1.21:3000/api'  // Local development
+  ? 'http://192.168.1.7:3000/api'  // Local development
   : 'https://journeyhawk-production.up.railway.app/api';  // Railway production
 
 const api = axios.create({

@@ -1,4 +1,10 @@
 // src/screens/room/CreateRoomScreen.js
+// Functional Req 18: Allows host to create an event/room with date, time, location
+// Functional Req 15: Room code generated for inviting attendees
+// - Form inputs: room name, location, start/end date-time, notes
+// - Optional geofence safety zone with configurable radius
+// - Auto-generates unique 8-character room code
+// - Uses native DateTimePicker for date/time selection
 import React, { useState } from 'react';
 import {
   View,

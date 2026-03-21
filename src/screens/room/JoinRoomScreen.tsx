@@ -1,4 +1,10 @@
 // src/screens/room/JoinRoomScreen.js
+// Functional Req 13: Attendees can join a room by entering the correct room code
+// Functional Req 14: Hosts can join another host's room as chaperone
+// - Simple form with 8-character room code input
+// - Auto-capitalizes input for consistency
+// - Validates code length before submission
+// - Auto-selects joined room as active for map view
 import React, { useState } from 'react';
 import {
   View,

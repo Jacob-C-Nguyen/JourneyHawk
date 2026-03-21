@@ -1,4 +1,10 @@
 // src/services/location.js
+// Functional Req 8: Manages phone GPS tracking and sends updates to backend
+// Functional Req 21: Stops tracking when user exits app
+// - Requests foreground and background location permissions
+// - Sends GPS coordinates every 10 seconds or 10 meters of movement
+// - Detects room deletion (404) and notifies user
+// - Tracks attendee status changes and sends immediately
 import * as Location from 'expo-location';
 import { locationAPI } from './api';
 

@@ -2,6 +2,10 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
+// Functional Req 3: The application should guide un-registered users to create a new account
+// - Collects username, email, password, phone, and role
+// - Password is hashed via bcrypt before storage (User model pre-save hook)
+// - Returns JWT token on successful registration
 // @desc    Register new user
 // @route   POST /api/auth/signup
 // @access  Public
@@ -50,6 +54,10 @@ exports.signup = async (req, res) => {
   }
 };
 
+// Functional Req 2: The application should allow users to successfully login with their account
+// - Accepts email or username with password
+// - Compares password against bcrypt hash stored in database
+// - Returns JWT token unique per session with 7-day expiration
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public

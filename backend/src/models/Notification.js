@@ -1,4 +1,9 @@
 // src/models/Notification.js
+// Functional Req 6 & 7: Notification schema for alerts and messaging
+// - Types: message, alert, location_alert, room_update
+// - from/to: references sending and receiving Users
+// - room: associates notification with specific room
+// - read: tracks whether notification has been viewed
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({

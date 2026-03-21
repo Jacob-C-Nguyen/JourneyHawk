@@ -2,6 +2,12 @@
 const Location = require('../models/Location');
 const Room = require('../models/Room');
 
+// Functional Req 8: The application should be able to send the user to the map screen
+// - Stores GPS lat/lng/accuracy from phone sensor into database
+// - Detects geofence violations using Haversine formula (distance from host)
+// - Emits real-time Socket.io events so map updates instantly
+// - Tracks attendee status (present, away-restroom, away-switching, away-other)
+// - Sends notifications to host on status change or geofence exit/enter
 // @desc    Update user location
 // @route   POST /api/location/update
 // @access  Private
@@ -184,6 +190,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c; // Distance in meters
 }
 
+// Functional Req 9: The application should allow to find an individual attendee
+// - Returns latest GPS location for every user in the room
+// - Aggregates by user to get most recent position only
+// - Includes username, email, phone, role for search bar filtering
 // @desc    Get all locations for a room
 // @route   GET /api/location/room/:roomId
 // @access  Private

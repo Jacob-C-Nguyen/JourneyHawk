@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { roomAPI } from '../services/api';
 import LocationService from '../services/location';
 import SocketService from '../services/socket';
+import { useAuth } from './AuthContext';
 
 const RoomContext = createContext();
 
@@ -17,6 +18,8 @@ export const useRoom = () => {
 };
 
 export const RoomProvider = ({ children }) => {
+  const { user } = useAuth();
+  const currentUserId = user?._id;
   const [activeRoom, setActiveRoom] = useState(null); // Currently selected room for map view
   const [rooms, setRooms] = useState([]); // All rooms user is in
   const [isTracking, setIsTracking] = useState(false);
@@ -220,9 +223,16 @@ export const RoomProvider = ({ children }) => {
       }
     });
 
-    // Listen for room deletion
+    // Listen for room deletion (only show alerts for attendees, not the host who deleted it)
     SocketService.on('room-deleted', async (data) => {
       console.log('🔔 [Global] Room deleted:', data.roomName);
+      
+      // If this host initiated the delete, just clean up silently
+      if (data.deletedByUserId === currentUserId) {
+        console.log('We deleted this room, skipping alert');
+        setRooms(prevRooms => prevRooms.filter(room => room._id !== data.roomId));
+        return;
+      }
       
       // Use functional setState to get current rooms and check if user is in this room
       setRooms(prevRooms => {

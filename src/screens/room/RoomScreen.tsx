@@ -1,4 +1,14 @@
 // src/screens/room/RoomScreen.js
+// Functional Req 10: Switches user to room screen when clicking room tab
+// Functional Req 11: View attendee basic info (username, email, role) in room list
+// Functional Req 12: Host can delete room (removes all attendees)
+// Functional Req 13: Shows attendees joining in real-time via Socket.io
+// Functional Req 14: Hosts can join existing rooms via room code
+// - Displays all rooms user is in with attendee count, room code, date, notes
+// - Selected room indicator for map view
+// - Attendee status tracking (present, away-restroom, away-switching)
+// - Geofence safety zone display
+// - Create Room / Join Room options when no active room
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -60,8 +70,6 @@ export default function RoomScreen({ navigation, route }) {
                 
                 // Reload rooms
                 await loadUserRooms();
-                
-                Alert.alert('Room Deleted', 'The room and all attendees have been removed.');
               } catch (error) {
                 console.error('Error deleting room:', error);
                 Alert.alert('Error', 'Failed to delete room');

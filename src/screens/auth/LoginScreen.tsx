@@ -1,4 +1,8 @@
 // src/screens/auth/LoginScreen.tsx
+// Functional Req 2: Allows users to successfully login with their account
+// - Provides input fields for email/username and password
+// - Validates role selection (host vs attendee) against stored account role
+// - Authenticates via JWT token from backend
 import React, { useState } from 'react';
 import {
   View,

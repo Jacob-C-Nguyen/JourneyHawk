@@ -1,4 +1,9 @@
 // src/models/Location.js
+// Functional Req 8 & 9: Location schema for real-time GPS tracking
+// - Stores lat/lng/accuracy from phone GPS sensor
+// - status: tracks attendee state (present, away-restroom, away-switching, away-other)
+// - isOutsideGeofence: flags when attendee exceeds safety zone radius
+// - Auto-deletes records after 7 days (expireAfterSeconds index)
 const mongoose = require('mongoose');
 
 const locationSchema = new mongoose.Schema({

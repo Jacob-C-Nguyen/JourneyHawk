@@ -2,6 +2,10 @@
 const Notification = require('../models/Notification');
 const Room = require('../models/Room');
 
+// Functional Req 6: The application should take users to the notification screen
+// - Retrieves all notifications for the logged-in user
+// - Sorted by most recent first
+// - Populates sender info and room details
 // @desc    Get all notifications for current user
 // @route   GET /api/notifications
 // @access  Private
@@ -25,6 +29,9 @@ exports.getNotifications = async (req, res) => {
   }
 };
 
+// Functional Req 7: The application should allow users to send a new notification
+// - Sends a notification to a single user
+// - Delivers in real-time via Socket.io
 // @desc    Send notification to single user
 // @route   POST /api/notifications/send
 // @access  Private
@@ -72,6 +79,10 @@ exports.sendNotification = async (req, res) => {
   }
 };
 
+// Functional Req 7: The application should allow users to send a new notification
+// - Host sends notification to ALL attendees in a room at once
+// - Creates individual notification records per recipient
+// - Each delivered in real-time via Socket.io
 // @desc    Send notification to all room attendees
 // @route   POST /api/notifications/send-to-room
 // @access  Private (Host only)
@@ -150,6 +161,8 @@ exports.sendNotificationToRoom = async (req, res) => {
   }
 };
 
+// Functional Req 6: Notification management - mark as read
+// - Verifies notification belongs to the user before updating
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id/read
 // @access  Private
@@ -187,6 +200,8 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
+// Functional Req 6: Notification management - delete notification
+// - Verifies notification belongs to the user before deleting
 // @desc    Delete a notification
 // @route   DELETE /api/notifications/:id
 // @access  Private

@@ -1,4 +1,11 @@
 // src/screens/home/AccountScreen.tsx
+// Functional Req 4: Calendar expands to view upcoming events by month
+// Functional Req 5: Clicking an event shows full details (time, date, location)
+// Functional Req 18: Displays created events on the calendar
+// - Shows calendar with month navigation and today highlight
+// - Lists upcoming room events sorted chronologically
+// - Displays user account info (email, phone, role)
+// - Provides logout functionality
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -336,8 +343,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   dayCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
+    width: '14.28%',
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },

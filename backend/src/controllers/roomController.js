@@ -3,6 +3,10 @@ const Room = require('../models/Room');
 const Location = require('../models/Location');
 const generateRoomCode = require('../utils/generateRoomCode');
 
+// Functional Req 15: The application should allow the user to invite attendees to their room
+// - Generates unique 8-character room code for attendees to join
+// Functional Req 18: The application should allow for the user to make an event
+// - Creates room with name, location, date/time, notes, and optional geofence
 // @desc    Create a new room
 // @route   POST /api/rooms/create
 // @access  Private (Host only)
@@ -47,6 +51,10 @@ exports.createRoom = async (req, res) => {
   }
 };
 
+// Functional Req 13: The application should be able to verify registration from an attendee
+// - Validates room code and adds user to room attendee list
+// Functional Req 14: The application should allow hosts to join an existing room
+// - Hosts can join another host's room as chaperone via room code
 // @desc    Join a room with code
 // @route   POST /api/rooms/join
 // @access  Private
@@ -106,6 +114,8 @@ exports.joinRoom = async (req, res) => {
   }
 };
 
+// Functional Req 11: The application should allow the user to view an attendee's basic information
+// - Returns room with populated attendee details (username, email, phone, role)
 // @desc    Get room by ID
 // @route   GET /api/rooms/:id
 // @access  Private
@@ -146,6 +156,8 @@ exports.getRoom = async (req, res) => {
   }
 };
 
+// Functional Req 10: The application should allow user to switch over to the room screen
+// - Returns all rooms the user is in (as host or attendee)
 // @desc    Get all rooms for a user
 // @route   GET /api/rooms/user/me
 // @access  Private
@@ -175,6 +187,10 @@ exports.getUserRooms = async (req, res) => {
   }
 };
 
+// Functional Req 12: The application should allow the user to be able to remove any registered attendee
+// - Attendee removes themselves from the room
+// - Deletes all location records for the user in this room
+// - Emits socket event so other users see them removed in real-time
 // @desc    Leave a room
 // @route   PUT /api/rooms/:id/leave
 // @access  Private
@@ -232,6 +248,10 @@ exports.leaveRoom = async (req, res) => {
   }
 };
 
+// Functional Req 12: The application should allow the user to be able to remove any registered attendee
+// - Host deletes the entire room, removing all attendees
+// - Deletes all location records for the room
+// - Emits socket event to notify all attendees of room deletion
 // @desc    Delete a room
 // @route   DELETE /api/rooms/:id
 // @access  Private (Host only)
@@ -259,6 +279,7 @@ exports.deleteRoom = async (req, res) => {
     io.to(`room:${room._id}`).emit('room-deleted', {
       roomId: room._id,
       roomName: room.name,
+      deletedByUserId: req.user._id.toString(),
     });
 
     // Delete all location records for this room
