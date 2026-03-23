@@ -13,12 +13,14 @@ import { navigationRef } from './navigationRef';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
+import VerifyOTPScreen from '../screens/auth/VerifyOTPScreen';
 import TabNavigator from './TabNavigator';
 
 type RootStackParamList = {
   RoleSelection: undefined;
   Login: { role: string };
   SignUp: { role: string };
+  VerifyOTP: { email: string };
   MainApp: undefined;
 };
 
@@ -230,6 +232,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
           </>
         ) : (
           <Stack.Screen name="MainApp" component={TabNavigator} />

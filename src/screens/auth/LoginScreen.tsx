@@ -37,7 +37,6 @@ export default function LoginScreen({ navigation, route }: Props) {
 
   const isHost = role === 'host';
   const roleLabel = isHost ? 'Host / Chaperone' : 'Attendee';
-  const roleEmoji = isHost ? '🛡️' : '👤';
 
   const handleLogin = async () => {
     if (!emailOrUsername || !password) {
@@ -76,7 +75,6 @@ export default function LoginScreen({ navigation, route }: Props) {
 
           <View style={styles.headerContainer}>
             <View style={[styles.roleChip, isHost && styles.roleChipHost]}>
-              <Text style={styles.roleChipEmoji}>{roleEmoji}</Text>
               <Text style={styles.roleChipText}>{roleLabel}</Text>
             </View>
             <Text style={styles.title}>Welcome Back</Text>

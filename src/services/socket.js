@@ -1,13 +1,11 @@
 // src/services/socket.js
 import { io } from 'socket.io-client';
+import Constants from 'expo-constants';
 
-// Backend Socket URL
-// DEVELOPMENT: Set to false to use Railway, true to use local backend
-const USE_LOCAL_BACKEND = true;  // Change to true for local testing
-
-const API_URL = USE_LOCAL_BACKEND
-  ? 'http://192.168.1.7:3000'  // Local development
-  : 'https://journeyhawk-production.up.railway.app';  // Railway production
+// Derives socket URL from the same API_URL used by api.js (strips /api suffix)
+const API_URL = (Constants.expoConfig?.extra?.apiUrl
+  ?? 'https://journeyhawk-production.up.railway.app/api'
+).replace(/\/api$/, '');
 
 class SocketService {
   constructor() {
@@ -27,7 +25,7 @@ class SocketService {
       auth: {
         token,
       },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

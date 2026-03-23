@@ -11,6 +11,8 @@ import AccountScreen from '../screens/home/AccountScreen';
 import RoomScreen from '../screens/room/RoomScreen';
 import CreateRoomScreen from '../screens/room/CreateRoomScreen';
 import JoinRoomScreen from '../screens/room/JoinRoomScreen';
+import AttendeeDetailScreen from '../screens/room/AttendeeDetailScreen';
+import InviteAttendeeScreen from '../screens/room/InviteAttendeeScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import MapRadarScreen from '../screens/map/MapRadarScreen';
 
@@ -24,6 +26,8 @@ function RoomStack() {
       <Stack.Screen name="RoomMain" component={RoomScreen} />
       <Stack.Screen name="CreateRoom" component={CreateRoomScreen} />
       <Stack.Screen name="JoinRoom" component={JoinRoomScreen} />
+      <Stack.Screen name="AttendeeDetail" component={AttendeeDetailScreen} />
+      <Stack.Screen name="InviteAttendee" component={InviteAttendeeScreen} />
     </Stack.Navigator>
   );
 }

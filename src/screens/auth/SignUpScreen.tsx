@@ -22,6 +22,7 @@ import { useAuth } from '../../contexts/AuthContext';
 type RootStackParamList = {
   SignUp: { role: string };
   Login: { role: string };
+  VerifyOTP: { email: string };
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
@@ -41,7 +42,6 @@ export default function SignUpScreen({ navigation, route }: Props) {
 
   const isHost = role === 'host';
   const roleLabel = isHost ? 'Host / Chaperone' : 'Attendee';
-  const roleEmoji = isHost ? '🛡️' : '👤';
 
   const handleSignUp = async () => {
     if (!username || !email || !phone || !password || !confirmPassword) {
@@ -80,11 +80,10 @@ export default function SignUpScreen({ navigation, route }: Props) {
     });
     setIsLoading(false);
 
-    if (result.success) {
-      // Navigation handled by AppNavigator
-    } else {
+    if (!result.success) {
       Alert.alert('Sign Up Failed', result.error || 'Unknown error');
     }
+    // On success, AuthContext sets user → AppNavigator redirects to MainApp
   };
 
   return (
@@ -107,7 +106,6 @@ export default function SignUpScreen({ navigation, route }: Props) {
 
           <View style={styles.headerContainer}>
             <View style={[styles.roleChip, isHost && styles.roleChipHost]}>
-              <Text style={styles.roleChipEmoji}>{roleEmoji}</Text>
               <Text style={styles.roleChipText}>{roleLabel}</Text>
             </View>
             <Text style={styles.title}>Create Account</Text>

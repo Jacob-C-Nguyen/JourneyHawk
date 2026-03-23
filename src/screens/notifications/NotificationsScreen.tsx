@@ -132,9 +132,16 @@ export default function NotificationsScreen() {
   const handleMarkAsRead = async (id) => {
     try {
       await notificationAPI.markAsRead(id);
-      loadNotifications();
+      setNotifications(prev =>
+        prev.map(n => n._id === id ? { ...n, read: true } : n)
+      );
     } catch (error) {
-      console.error('Error marking as read:', error);
+      if (error.response?.status === 404) {
+        // Stale notification (e.g. from old DB) — remove it from view
+        setNotifications(prev => prev.filter(n => n._id !== id));
+      } else {
+        console.error('Error marking as read:', error);
+      }
     }
   };
 

@@ -20,6 +20,8 @@ import {
   Alert,
   Platform,
   StatusBar,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom } from '../../contexts/RoomContext';
@@ -31,7 +33,8 @@ export default function RoomScreen({ navigation, route }) {
   const { user } = useAuth();
   const { activeRoom, rooms, isTracking, isLoading, loadUserRooms, clearCurrentRoom, setCurrentRoom } = useRoom();
   const [localRoom, setLocalRoom] = useState(activeRoom);
-  const [userStatus, setUserStatus] = useState('present'); // Track user's current status
+  const [userStatus, setUserStatus] = useState('present');
+  const [attendeeModalRoom, setAttendeeModalRoom] = useState(null);
 
   // Sync localRoom with activeRoom
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function RoomScreen({ navigation, route }) {
   useFocusEffect(
     React.useCallback(() => {
       loadUserRooms();
-    }, [route?.params?.refresh])
+    }, [loadUserRooms])
   );
 
   const handleLeaveRoom = async (room, isHost) => {
@@ -205,6 +208,17 @@ export default function RoomScreen({ navigation, route }) {
                       <Text style={styles.selectedText}>✔ Selected for Map View</Text>
                     </View>
                   )}
+
+                  {isSelected && (
+                    <TouchableOpacity
+                      style={styles.viewAttendeesButton}
+                      onPress={() => setAttendeeModalRoom(item)}
+                    >
+                      <Text style={styles.viewAttendeesText}>
+                        View Attendees ({item.attendees?.length || 0})
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </TouchableOpacity>
                 
                 <View style={styles.roomCardActions}>
@@ -234,6 +248,103 @@ export default function RoomScreen({ navigation, route }) {
             <Text style={styles.emptyText}>No rooms yet</Text>
           }
         />
+
+        {/* Attendee Modal */}
+        <Modal
+          visible={!!attendeeModalRoom}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setAttendeeModalRoom(null)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setAttendeeModalRoom(null)}
+          >
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Attendees</Text>
+                <View style={styles.modalHeaderRight}>
+                  {attendeeModalRoom?.host?._id === user?._id && (
+                    <TouchableOpacity
+                      style={styles.inviteButton}
+                      onPress={() => {
+                        setAttendeeModalRoom(null);
+                        navigation.navigate('InviteAttendee', { roomId: attendeeModalRoom._id });
+                      }}
+                    >
+                      <Text style={styles.inviteButtonText}>+ Invite</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity onPress={() => setAttendeeModalRoom(null)}>
+                    <Text style={styles.modalClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <ScrollView>
+                {attendeeModalRoom?.attendees?.map(attendee => {
+                  const isRoomHost = attendee._id === attendeeModalRoom?.host?._id;
+                  const canRemove = attendeeModalRoom?.host?._id === user?._id
+                    && !isRoomHost
+                    && attendee._id !== user?._id;
+
+                  return (
+                    <View key={attendee._id} style={styles.attendeeRow}>
+                      {canRemove && (
+                        <TouchableOpacity
+                          style={styles.removeBtn}
+                          onPress={() => {
+                            Alert.alert(
+                              'Remove Attendee',
+                              `Remove ${attendee.username} from the room?`,
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Remove',
+                                  style: 'destructive',
+                                  onPress: async () => {
+                                    try {
+                                      await roomAPI.removeAttendee(attendeeModalRoom._id, attendee._id);
+                                      await loadUserRooms();
+                                      setAttendeeModalRoom(prev => prev
+                                        ? { ...prev, attendees: prev.attendees.filter(a => a._id !== attendee._id) }
+                                        : null
+                                      );
+                                    } catch (e) {
+                                      Alert.alert('Error', 'Failed to remove attendee');
+                                    }
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <Text style={styles.removeBtnText}>−</Text>
+                        </TouchableOpacity>
+                      )}
+                      <View style={styles.attendeeAvatar}>
+                        <Text style={styles.attendeeAvatarText}>
+                          {attendee.username?.[0]?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                      <Text style={styles.attendeeName}>{attendee.username}</Text>
+                      <TouchableOpacity
+                        style={styles.detailButton}
+                        onPress={() => {
+                          setAttendeeModalRoom(null);
+                          navigation.navigate('AttendeeDetail', { attendee, roomId: attendeeModalRoom._id });
+                        }}
+                      >
+                        <Text style={styles.detailButtonText}>Detail</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         <View style={styles.bottomActions}>
           {user?.role === 'host' && (
@@ -416,6 +527,132 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: 12,
     color: '#2e7d32',
+    fontWeight: '600',
+  },
+  viewAttendeesButton: {
+    marginTop: 12,
+    backgroundColor: 'rgba(59,130,246,0.1)',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+  },
+  viewAttendeesText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#1E293B',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#475569',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#F1F5F9',
+  },
+  modalHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalClose: {
+    fontSize: 18,
+    color: '#64748B',
+    paddingHorizontal: 4,
+  },
+  inviteButton: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  inviteButtonText: {
+    color: '#3B82F6',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  attendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+    gap: 12,
+  },
+  removeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeBtnText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  attendeeAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  attendeeAvatarText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  attendeeName: {
+    flex: 1,
+    fontSize: 15,
+    color: '#F1F5F9',
+    fontWeight: '500',
+  },
+  detailButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#0F172A',
+  },
+  detailButtonText: {
+    color: '#94A3B8',
+    fontSize: 13,
     fontWeight: '600',
   },
   roomCardActions: {

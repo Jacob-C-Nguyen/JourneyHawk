@@ -49,20 +49,33 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.signup(userData);
-      
-      // Store token securely
+
       await SecureStore.setItemAsync('userToken', response.data.token);
-      
-      // Set user data (without token)
       const { token, ...userWithoutToken } = response.data;
       setUser(userWithoutToken);
-      
-      // Connect socket
       SocketService.connect(response.data.token);
-      
+
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Signup failed';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const verifyEmail = async (email, otp) => {
+    try {
+      setError(null);
+      const response = await authAPI.verifyEmail(email, otp);
+
+      await SecureStore.setItemAsync('userToken', response.data.token);
+      const { token, ...userWithoutToken } = response.data;
+      setUser(userWithoutToken);
+      SocketService.connect(response.data.token);
+
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Verification failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -72,10 +85,20 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.login(credentials);
-      
+
+      // Unverified account — redirect to OTP screen
+      if (response.requiresVerification) {
+        return {
+          success: false,
+          requiresVerification: true,
+          userId: response.userId,
+          email: response.email,
+          error: response.message,
+        };
+      }
+
       // Role-based access check
       if (expectedRole && response.data.role !== expectedRole) {
-        const roleName = expectedRole === 'host' ? 'Host / Chaperone' : 'Attendee';
         const actualRole = response.data.role === 'host' ? 'Host / Chaperone' : 'Attendee';
         const errorMessage = `This account is registered as ${actualRole}. Please go back and select the correct role.`;
         setError(errorMessage);
@@ -118,6 +141,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     error,
     signup,
+    verifyEmail,
     login,
     logout,
     isAuthenticated: !!user,

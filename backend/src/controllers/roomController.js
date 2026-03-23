@@ -171,7 +171,7 @@ exports.getUserRooms = async (req, res) => {
       isActive: true
     })
     .populate('host', 'username email')
-    .populate('attendees', 'username email role')
+    .populate('attendees', 'username email phone role')
     .sort({ startDate: -1 });
 
     res.status(200).json({
@@ -245,6 +245,90 @@ exports.leaveRoom = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+// Functional Req 12: The application should allow the host to remove individual attendees
+// @desc    Remove an attendee from a room
+// @route   DELETE /api/rooms/:id/attendees/:attendeeId
+// @access  Private (Host only)
+exports.removeAttendee = async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
+
+    if (room.host.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Only the host can remove attendees' });
+    }
+
+    const attendeeId = req.params.attendeeId;
+    if (room.host.toString() === attendeeId) {
+      return res.status(400).json({ success: false, message: 'Cannot remove the host' });
+    }
+
+    const wasInRoom = room.attendees.some(a => a.toString() === attendeeId);
+    if (!wasInRoom) {
+      return res.status(404).json({ success: false, message: 'Attendee not in this room' });
+    }
+
+    room.attendees = room.attendees.filter(a => a.toString() !== attendeeId);
+    await room.save();
+
+    await Location.deleteMany({ user: attendeeId, room: req.params.id });
+
+    const io = req.app.get('io');
+    io.to(`room:${room._id}`).emit('user-left', {
+      roomId: room._id,
+      userId: attendeeId,
+      username: 'attendee',
+      removedByHost: true,
+    });
+
+    res.status(200).json({ success: true, message: 'Attendee removed' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Functional Req 15: Invite attendee by phone number
+// @desc    Find user by phone and add them to the room
+// @route   POST /api/rooms/:id/invite
+// @access  Private (Host only)
+exports.inviteByPhone = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
+
+    if (room.host.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Only the host can invite attendees' });
+    }
+
+    const User = require('../models/User');
+    const invitee = await User.findOne({ phone });
+    if (!invitee) {
+      return res.status(404).json({ success: false, message: 'No user found with that phone number' });
+    }
+
+    if (room.attendees.some(a => a.toString() === invitee._id.toString())) {
+      return res.status(400).json({ success: false, message: `${invitee.username} is already in this room` });
+    }
+
+    room.attendees.push(invitee._id);
+    await room.save();
+    await room.populate('attendees', 'username email phone role');
+    await room.populate('host', 'username email');
+
+    const io = req.app.get('io');
+    io.to(`room:${room._id}`).emit('user-joined', {
+      roomId: room._id,
+      user: { _id: invitee._id.toString(), username: invitee.username, email: invitee.email, role: invitee.role },
+      room,
+    });
+
+    res.status(200).json({ success: true, data: { username: invitee.username, email: invitee.email } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

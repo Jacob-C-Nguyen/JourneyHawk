@@ -7,14 +7,13 @@
 // - Notification API: getAll (Req 6), sendToRoom (Req 7), markAsRead, delete
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
-// Backend API URL
-// DEVELOPMENT: Set to false to use Railway, true to use local backend
-const USE_LOCAL_BACKEND = true;  // Change to true for local testing
-
-const API_URL = USE_LOCAL_BACKEND
-  ? 'http://192.168.1.7:3000/api'  // Local development
-  : 'https://journeyhawk-production.up.railway.app/api';  // Railway production
+// API_URL is set via the API_URL environment variable (in .env or shell).
+// Falls back to Railway production if not set.
+// Local dev example: add API_URL=http://192.168.x.x:3000/api to your .env file.
+const API_URL = Constants.expoConfig?.extra?.apiUrl
+  ?? 'https://journeyhawk-production.up.railway.app/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -75,6 +74,16 @@ export const authAPI = {
     const response = await api.get('/auth/me');
     return response.data;
   },
+
+  verifyEmail: async (email, otp) => {
+    const response = await api.post('/auth/verify-email', { email, otp });
+    return response.data;
+  },
+
+  resendOtp: async (email) => {
+    const response = await api.post('/auth/resend-otp', { email });
+    return response.data;
+  },
 };
 
 // Room API calls
@@ -106,6 +115,16 @@ export const roomAPI = {
 
   delete: async (roomId) => {
     const response = await api.delete(`/rooms/${roomId}`);
+    return response.data;
+  },
+
+  removeAttendee: async (roomId, attendeeId) => {
+    const response = await api.delete(`/rooms/${roomId}/attendees/${attendeeId}`);
+    return response.data;
+  },
+
+  inviteAttendee: async (roomId, phone) => {
+    const response = await api.post(`/rooms/${roomId}/invite`, { phone });
     return response.data;
   },
 };

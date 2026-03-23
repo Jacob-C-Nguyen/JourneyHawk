@@ -1,5 +1,5 @@
 // src/contexts/RoomContext.js
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { roomAPI } from '../services/api';
@@ -20,24 +20,29 @@ export const useRoom = () => {
 export const RoomProvider = ({ children }) => {
   const { user } = useAuth();
   const currentUserId = user?._id;
-  const [activeRoom, setActiveRoom] = useState(null); // Currently selected room for map view
-  const [rooms, setRooms] = useState([]); // All rooms user is in
+  const [activeRoom, setActiveRoom] = useState(null);
+  const [rooms, setRooms] = useState([]);
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Ref so socket callbacks always see the latest activeRoom without re-registering
+  const activeRoomRef = useRef(activeRoom);
+  useEffect(() => {
+    activeRoomRef.current = activeRoom;
+  }, [activeRoom]);
 
   // Load active room on mount
   useEffect(() => {
     loadActiveRoom();
   }, []);
 
-  // Setup global socket listeners (always active)
+  // Setup socket listeners once — use activeRoomRef inside handlers
   useEffect(() => {
     setupSocketListeners();
-
     return () => {
       cleanupSocketListeners();
     };
-  }, [activeRoom]); // Re-setup when activeRoom changes so we have latest reference
+  }, []);
 
   // Start tracking and join socket room when active room changes
   useEffect(() => {
@@ -61,33 +66,48 @@ export const RoomProvider = ({ children }) => {
     }
   };
 
-  const loadUserRooms = async () => {
+  const setCurrentRoom = useCallback(async (room) => {
+    try {
+      setActiveRoom(room);
+      await SecureStore.setItemAsync('activeRoom', JSON.stringify(room));
+    } catch (error) {
+      console.error('Error setting current room:', error);
+    }
+  }, []);
+
+  const clearCurrentRoom = useCallback(async () => {
+    try {
+      setActiveRoom(null);
+      await SecureStore.deleteItemAsync('activeRoom');
+    } catch (error) {
+      console.error('Error clearing current room:', error);
+    }
+  }, []);
+
+  const loadUserRooms = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await roomAPI.getUserRooms();
       setRooms(response.data);
-      
-      // If user has rooms but no active room selected, select the first one
-      if (response.data.length > 0 && !activeRoom) {
+
+      // Read from SecureStore to avoid stale closure issues
+      const savedRoom = await SecureStore.getItemAsync('activeRoom');
+      const currentActiveRoom = savedRoom ? JSON.parse(savedRoom) : null;
+
+      if (response.data.length > 0 && !currentActiveRoom) {
+        // No room selected yet — pick the first one
         await setCurrentRoom(response.data[0]);
-      } else if (activeRoom) {
-        // Update active room data if it exists in the response
-        const updatedActiveRoom = response.data.find(room => room._id === activeRoom._id);
+      } else if (currentActiveRoom) {
+        const updatedActiveRoom = response.data.find(room => room._id === currentActiveRoom._id);
         if (updatedActiveRoom) {
-          // Only update if data actually changed to avoid triggering useEffect
-          // Just update the activeRoom reference WITHOUT calling setCurrentRoom
-          // This prevents unnecessary tracking stops/starts
           setActiveRoom(prev => {
-            // Deep comparison - only update if something changed
-            const hasChanged = !prev || 
+            const hasChanged = !prev ||
               prev.attendees?.length !== updatedActiveRoom.attendees?.length ||
               prev.name !== updatedActiveRoom.name ||
               prev.notes !== updatedActiveRoom.notes;
-            
             return hasChanged ? updatedActiveRoom : prev;
           });
         } else {
-          // Active room no longer exists (might have been deleted)
           await clearCurrentRoom();
         }
       }
@@ -96,26 +116,7 @@ export const RoomProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const setCurrentRoom = async (room) => {
-    try {
-      setActiveRoom(room);
-      await SecureStore.setItemAsync('activeRoom', JSON.stringify(room));
-    } catch (error) {
-      console.error('Error setting current room:', error);
-    }
-  };
-
-  const clearCurrentRoom = async () => {
-    try {
-      setActiveRoom(null);
-      await SecureStore.deleteItemAsync('activeRoom');
-      await stopTracking();
-    } catch (error) {
-      console.error('Error clearing current room:', error);
-    }
-  };
+  }, [setCurrentRoom, clearCurrentRoom]);
 
   const startTracking = async () => {
     if (!activeRoom || isTracking) return;
@@ -179,15 +180,12 @@ export const RoomProvider = ({ children }) => {
       );
       
       // Also update activeRoom if it matches
-      if (activeRoom?._id === data.roomId) {
+      if (activeRoomRef.current?._id === data.roomId) {
         setActiveRoom(prev => {
           if (!prev) return prev;
           const userExists = prev.attendees.some(a => a._id === data.user._id);
           if (!userExists) {
-            return {
-              ...prev,
-              attendees: [...prev.attendees, data.user]
-            };
+            return { ...prev, attendees: [...prev.attendees, data.user] };
           }
           return prev;
         });
@@ -212,13 +210,10 @@ export const RoomProvider = ({ children }) => {
       );
       
       // Also update activeRoom if it matches
-      if (activeRoom?._id === data.roomId) {
+      if (activeRoomRef.current?._id === data.roomId) {
         setActiveRoom(prev => {
           if (!prev) return prev;
-          return {
-            ...prev,
-            attendees: prev.attendees.filter(a => a._id !== data.userId)
-          };
+          return { ...prev, attendees: prev.attendees.filter(a => a._id !== data.userId) };
         });
       }
     });
@@ -244,7 +239,7 @@ export const RoomProvider = ({ children }) => {
         }
         
         // Room exists in user's rooms, show appropriate alert
-        if (activeRoom?._id === data.roomId) {
+        if (activeRoomRef.current?._id === data.roomId) {
           Alert.alert(
             'Room Deleted',
             `The host has ended "${data.roomName}". You have been automatically removed.`,
