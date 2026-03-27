@@ -1,4 +1,4 @@
-// src/components/StatusSelector.js
+// Req 8: Allows attendees to update their status, which is sent with the next location update
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,10 +12,10 @@ import {
 import LocationService from '../services/location';
 
 const STATUS_OPTIONS = [
-  { value: 'present', label: 'Present', emoji: '✅', color: '#34c759' },
-  { value: 'away-restroom', label: 'Restroom', emoji: '🚻', color: '#ff9500' },
-  { value: 'away-switching', label: 'Switching Groups', emoji: '👥', color: '#ff9500' },
-  { value: 'away-other', label: 'Other', emoji: '⚠️', color: '#ff3b30' },
+  { value: 'present', label: 'Present', color: '#34c759' },
+  { value: 'away-restroom', label: 'Restroom', color: '#ff9500' },
+  { value: 'away-switching', label: 'Switching Groups', color: '#ff9500' },
+  { value: 'away-other', label: 'Other', color: '#ff3b30' },
 ];
 
 export default function StatusSelector({ currentStatus = 'present', onStatusChange }) {
@@ -24,19 +24,17 @@ export default function StatusSelector({ currentStatus = 'present', onStatusChan
   const [customReason, setCustomReason] = useState('');
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
 
-  // Update display status when prop changes
   useEffect(() => {
     setDisplayStatus(currentStatus);
   }, [currentStatus]);
 
   const currentStatusOption = STATUS_OPTIONS.find(s => s.value === displayStatus) || STATUS_OPTIONS[0];
 
+  // Req 8: Updates location service status and notifies parent component
   const handleStatusSelect = async (status) => {
     if (status === 'away-other') {
-      // Show custom reason input
       setSelectedStatus(status);
     } else {
-      // Update immediately
       await LocationService.updateStatus(status, '');
       if (onStatusChange) {
         onStatusChange(status, '');
@@ -66,7 +64,6 @@ export default function StatusSelector({ currentStatus = 'present', onStatusChan
         style={[styles.statusButton, { backgroundColor: currentStatusOption.color + '20' }]}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={styles.statusEmoji}>{currentStatusOption.emoji}</Text>
         <Text style={[styles.statusText, { color: currentStatusOption.color }]}>
           {currentStatusOption.label}
         </Text>
@@ -83,7 +80,7 @@ export default function StatusSelector({ currentStatus = 'present', onStatusChan
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Update Status</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButton}>✕</Text>
+                <Text style={styles.closeButton}>X</Text>
               </TouchableOpacity>
             </View>
 
@@ -102,10 +99,9 @@ export default function StatusSelector({ currentStatus = 'present', onStatusChan
                     ]}
                     onPress={() => handleStatusSelect(option.value)}
                   >
-                    <Text style={styles.statusOptionEmoji}>{option.emoji}</Text>
                     <Text style={styles.statusOptionLabel}>{option.label}</Text>
                     {displayStatus === option.value && (
-                      <Text style={styles.checkmark}>✓</Text>
+                      <Text style={styles.checkmark}>Selected</Text>
                     )}
                   </TouchableOpacity>
                 ))}
@@ -155,10 +151,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignSelf: 'flex-start',
   },
-  statusEmoji: {
-    fontSize: 18,
-    marginRight: 8,
-  },
   statusText: {
     fontSize: 14,
     fontWeight: '600',
@@ -187,9 +179,9 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   closeButton: {
-    fontSize: 28,
+    fontSize: 18,
     color: '#666',
-    fontWeight: '300',
+    fontWeight: '600',
   },
   modalSubtitle: {
     fontSize: 14,
@@ -212,10 +204,6 @@ const styles = StyleSheet.create({
     borderColor: '#007AFF',
     backgroundColor: '#e3f2fd',
   },
-  statusOptionEmoji: {
-    fontSize: 24,
-    marginRight: 15,
-  },
   statusOptionLabel: {
     fontSize: 16,
     fontWeight: '600',
@@ -223,7 +211,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   checkmark: {
-    fontSize: 20,
+    fontSize: 14,
     color: '#007AFF',
     fontWeight: 'bold',
   },

@@ -1,4 +1,3 @@
-// src/controllers/locationController.js
 const Location = require('../models/Location');
 const Room = require('../models/Room');
 
@@ -61,7 +60,6 @@ exports.updateLocation = async (req, res) => {
         isOutsideGeofence = distance > (room.geofence.radius || 100);
         
         if (isOutsideGeofence) {
-          console.log(`⚠️ ${req.user.username} is ${distance.toFixed(0)}m from host (limit: ${room.geofence.radius}m)`);
         }
       }
     }
@@ -120,7 +118,6 @@ exports.updateLocation = async (req, res) => {
         notification,
       });
       
-      console.log(`🔔 Notification sent to host ${room.host.toString()}: ${notification.title}`);
     }
 
     // Notify host of geofence violation
@@ -138,7 +135,6 @@ exports.updateLocation = async (req, res) => {
         notification,
       });
       
-      console.log(`🔔 Geofence exit notification sent to host: ${req.user.username}`);
     }
 
     // Notify host when attendee re-enters geofence
@@ -156,10 +152,8 @@ exports.updateLocation = async (req, res) => {
         notification,
       });
       
-      console.log(`🔔 Geofence return notification sent to host: ${req.user.username}`);
     }
 
-    console.log(`📍 Location updated for user ${req.user.username}: (${latitude}, ${longitude}) - Status: ${status || 'present'}`);
 
     res.status(200).json({
       success: true,
@@ -256,7 +250,6 @@ exports.getRoomLocations = async (req, res) => {
       timestamp: loc.timestamp,
     }));
 
-    console.log(`Sending ${transformedLocations.length} locations for room ${roomId}`);
 
     res.status(200).json({
       success: true,

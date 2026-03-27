@@ -1,11 +1,6 @@
-// src/screens/notifications/NotificationsScreen.js
-// Functional Req 6: Takes users to notification screen when clicking the notification tab
-// Functional Req 7: Allows users to send a new notification via "+" button (host only)
-// Functional Req 19: Notifications displayed with type filtering (message, alert, location_alert)
-// - Real-time notification updates via Socket.io
-// - Color-coded cards with title, description, timestamp, and sender
-// - Mark as read and delete functionality
-// - Send notification modal for hosts with type selection
+// Req 6: Takes users to the notification screen when clicking the notification tab
+// Req 7: Allows host to send a new notification via the "+" button
+// Req 19: Notifications displayed with type filtering (message, alert, location_alert)
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -34,13 +29,12 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [sending, setSending] = useState(false);
-  
-  // Form state
+
   const [notificationType, setNotificationType] = useState('message');
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
 
-  // Check if user is the host of the active room
+  // Req 6: Only host of the active room can send notifications
   const isHost = activeRoom?.host?._id === user?._id;
 
   useEffect(() => {
@@ -52,16 +46,11 @@ export default function NotificationsScreen() {
     };
   }, [user]);
 
+  // Req 6: Subscribe to real-time new-notification events for this user
   const setupRealtimeListener = () => {
     if (!user) return;
 
-    console.log('📡 [Notifications] Setting up real-time listener');
-
-    // Listen for real-time notifications to update the list
     SocketService.on('new-notification', (data) => {
-      console.log('🔔 [Notifications] Real-time notification received:', data.notification);
-      
-      // Add new notification to the top of the list
       setNotifications(prev => {
         const exists = prev.some(n => n._id === data.notification._id);
         if (exists) return prev;
@@ -72,7 +61,6 @@ export default function NotificationsScreen() {
 
   const cleanupRealtimeListener = () => {
     SocketService.off('new-notification');
-    console.log('🔌 [Notifications] Stopped listening for new notifications');
   };
 
   const loadNotifications = async () => {
@@ -88,6 +76,7 @@ export default function NotificationsScreen() {
     }
   };
 
+  // Req 7: Host sends notification to all attendees in the active room
   const handleSendNotification = async () => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -99,7 +88,6 @@ export default function NotificationsScreen() {
       return;
     }
 
-    // Only hosts can send notifications
     if (!isHost) {
       Alert.alert('Error', 'Only the room host can send notifications');
       return;
@@ -116,8 +104,7 @@ export default function NotificationsScreen() {
       });
 
       Alert.alert('Success', 'Notification sent to all attendees!');
-      
-      // Clear form
+
       setNotificationTitle('');
       setNotificationMessage('');
       setShowSendModal(false);
@@ -137,7 +124,6 @@ export default function NotificationsScreen() {
       );
     } catch (error) {
       if (error.response?.status === 404) {
-        // Stale notification (e.g. from old DB) — remove it from view
         setNotifications(prev => prev.filter(n => n._id !== id));
       } else {
         console.error('Error marking as read:', error);
@@ -154,6 +140,7 @@ export default function NotificationsScreen() {
     }
   };
 
+  // Req 19: Color-code notification cards by type
   const getNotificationColor = (type) => {
     switch (type) {
       case 'alert':
@@ -222,8 +209,8 @@ export default function NotificationsScreen() {
             {notifications.filter(n => !n.read).length} unread
           </Text>
         </View>
-        
-        {/* Only show + button if user is the HOST of the room */}
+
+        {/* Req 7: Only show send button if user is host of the active room */}
         {isHost && (
           <TouchableOpacity
             style={styles.addButton}
@@ -252,7 +239,7 @@ export default function NotificationsScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No notifications yet</Text>
             <Text style={styles.emptySubtext}>
-              {activeRoom 
+              {activeRoom
                 ? 'Alerts and messages will appear here'
                 : 'Join a room to receive notifications'}
             </Text>
@@ -260,7 +247,7 @@ export default function NotificationsScreen() {
         }
       />
 
-      {/* Send Notification Modal */}
+      {/* Req 7: Send notification modal — host only */}
       <Modal
         visible={showSendModal}
         animationType="slide"

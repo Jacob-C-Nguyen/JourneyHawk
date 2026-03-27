@@ -1,4 +1,3 @@
-// src/services/api.js
 // Core API service - all backend communication flows through here
 // - Axios instance with JWT token auto-injection via interceptor
 // - Auth API: signup (Req 3), login (Req 2)

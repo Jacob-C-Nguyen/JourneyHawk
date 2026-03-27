@@ -5,12 +5,9 @@
 
 const appJson = require('./app.json');
 
-
-//UPDATE the ip address inside the url with your LAN ip
-//can be found with ipconfig on windows (or search up how to do it if your machine is different)
 export default {
   ...appJson.expo,
   extra: {
-    apiUrl: process.env.API_URL || 'http://192.168.86.38:3000/api',
+    apiUrl: process.env.API_URL || 'http://192.168.1.5:3000/api',
   },
 };

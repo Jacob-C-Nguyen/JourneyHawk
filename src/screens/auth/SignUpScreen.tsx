@@ -1,4 +1,3 @@
-// src/screens/auth/SignUpScreen.tsx
 // Functional Req 3: Guides unregistered users to create a new account
 // - Collects username, email, phone, password, and confirm password
 // - Validates inputs (min lengths, email format, password match)

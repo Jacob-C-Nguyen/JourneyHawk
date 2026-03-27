@@ -1,4 +1,3 @@
-// src/screens/home/EventDetailScreen.tsx
 // Functional Req 5: The application should allow users to click on an event to see full details
 // - Shows room name, date/time, location, notes, room code, attendee count
 // - Navigated to from AccountScreen calendar event cards

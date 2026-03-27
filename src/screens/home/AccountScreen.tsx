@@ -1,4 +1,3 @@
-// src/screens/home/AccountScreen.tsx
 // Functional Req 4: Calendar expands to view upcoming events by month
 // Functional Req 5: Clicking an event shows full details (time, date, location)
 // Functional Req 18: Displays created events on the calendar

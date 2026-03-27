@@ -1,4 +1,3 @@
-// src/navigation/AppNavigator.tsx
 // Functional Req 1: App opens from icon and brings user to login screen
 // Functional Req 2: Allows users to login with credentials
 // Functional Req 3: Guides unregistered users to create a new account
