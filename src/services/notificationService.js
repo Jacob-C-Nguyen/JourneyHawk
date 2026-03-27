@@ -1,14 +1,13 @@
-// src/services/notificationService.js
+// Req 6/7: Registers device for push notifications and manages notification listeners
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { authAPI } from './api';
 
-// Check if running in Expo Go
 const isExpoGo = Constants.appOwnership === 'expo';
 
-// Configure notification behavior (only if not in Expo Go)
+// Req 6: Configure foreground notification display behavior
 if (!isExpoGo) {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -20,54 +19,37 @@ if (!isExpoGo) {
 }
 
 class NotificationService {
-  /**
-   * Register device for push notifications
-   * Returns the Expo push token or null if registration fails
-   */
+  // Req 6: Registers device push token with backend so host can receive alerts
   async registerForPushNotifications() {
-    // Skip if in Expo Go
     if (isExpoGo) {
-      console.log('⚠️ Push notifications not available in Expo Go');
-      console.log('✅ In-app notifications via Socket.io still work!');
       return null;
     }
 
-    // Push notifications only work on physical devices
     if (!Device.isDevice) {
-      console.log('⚠️ Push notifications require a physical device');
       return null;
     }
 
     try {
-      // Check existing permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      // Request permission if not already granted
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      // If permission denied, cannot proceed
       if (finalStatus !== 'granted') {
-        console.log('❌ Permission denied for push notifications');
         return null;
       }
 
-      // Get the Expo push token
       const token = (await Notifications.getExpoPushTokenAsync()).data;
-      console.log('📱 Expo Push Token:', token);
 
-      // Send token to backend to save in user's profile
       try {
         await authAPI.updatePushToken({ pushToken: token });
-        console.log('✅ Push token saved to backend');
       } catch (error) {
-        console.error('❌ Failed to save push token to backend:', error);
+        console.error('Failed to save push token to backend:', error);
       }
 
-      // Configure Android notification channel
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'JourneyHawk Alerts',
@@ -80,17 +62,14 @@ class NotificationService {
 
       return token;
     } catch (error) {
-      console.error('❌ Error registering for push notifications:', error);
+      console.error('Error registering for push notifications:', error);
       return null;
     }
   }
 
-  /**
-   * Add listener for when notification is received while app is in foreground
-   */
+  // Req 6: Listens for notifications received while app is in the foreground
   addNotificationListener(callback) {
     if (isExpoGo) {
-      console.log('⚠️ Notification listeners not available in Expo Go');
       return null;
     }
 
@@ -102,12 +81,9 @@ class NotificationService {
     }
   }
 
-  /**
-   * Add listener for when user taps on a notification
-   */
+  // Req 6: Listens for user tapping on a notification
   addNotificationResponseListener(callback) {
     if (isExpoGo) {
-      console.log('⚠️ Notification response listeners not available in Expo Go');
       return null;
     }
 
@@ -119,16 +95,12 @@ class NotificationService {
     }
   }
 
-  /**
-   * Remove notification subscription
-   */
   removeNotificationSubscription(subscription) {
     if (isExpoGo || !subscription) {
       return;
     }
 
     try {
-      // Check if the function exists before calling
       if (Notifications.removeNotificationSubscription) {
         Notifications.removeNotificationSubscription(subscription);
       }
@@ -137,12 +109,9 @@ class NotificationService {
     }
   }
 
-  /**
-   * Schedule a local notification (for testing)
-   */
+  // Req 7: Schedules an immediate local notification for testing
   async scheduleLocalNotification(title, body, data = {}) {
     if (isExpoGo) {
-      console.log('⚠️ Local notifications not available in Expo Go');
       return;
     }
 
@@ -154,7 +123,7 @@ class NotificationService {
           data,
           sound: 'default',
         },
-        trigger: null, // Show immediately
+        trigger: null,
       });
     } catch (error) {
       console.error('Error scheduling local notification:', error);

@@ -1,14 +1,9 @@
-// src/screens/room/RoomScreen.js
-// Functional Req 10: Switches user to room screen when clicking room tab
-// Functional Req 11: View attendee basic info (username, email, role) in room list
-// Functional Req 12: Host can delete room (removes all attendees)
-// Functional Req 13: Shows attendees joining in real-time via Socket.io
-// Functional Req 14: Hosts can join existing rooms via room code
-// - Displays all rooms user is in with attendee count, room code, date, notes
-// - Selected room indicator for map view
-// - Attendee status tracking (present, away-restroom, away-switching)
-// - Geofence safety zone display
-// - Create Room / Join Room options when no active room
+// Req 10: Switches user to room screen and displays all rooms they belong to
+// Req 11: View attendee list with name and phone in a bottom sheet modal
+// Req 12: Host can remove attendees or delete the room entirely
+// Req 13: Attendees join in real-time via Socket.io events
+// Req 14: Hosts can join another host's room via room code
+// Req 15: Host can invite attendees by phone number from attendee modal
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -152,7 +147,7 @@ export default function RoomScreen({ navigation, route }) {
                   
                   {item.startDate && (
                     <Text style={styles.roomCardDate}>
-                      📅 {new Date(item.startDate).toLocaleDateString('en-US', {
+                      {new Date(item.startDate).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
@@ -160,20 +155,20 @@ export default function RoomScreen({ navigation, route }) {
                       })}
                     </Text>
                   )}
-                  
+
                   <Text style={styles.roomCardAttendees}>
-                    👥 {item.attendees?.length || 0} {item.attendees?.length === 1 ? 'person' : 'people'}
+                    {item.attendees?.length || 0} {item.attendees?.length === 1 ? 'person' : 'people'}
                   </Text>
-                  
+
                   {item.notes && (
                     <Text style={styles.roomCardNotes} numberOfLines={2}>
-                      📝 {item.notes}
+                      {item.notes}
                     </Text>
                   )}
-                  
+
                   {item.geofence && item.geofence.radius && (
                     <Text style={styles.roomCardGeofence}>
-                      🛡️ Safety zone: {item.geofence.radius}m from host
+                      Safety zone: {item.geofence.radius}m from host
                     </Text>
                   )}
                   
@@ -182,9 +177,8 @@ export default function RoomScreen({ navigation, route }) {
                       <Text style={styles.statusLabel}>Your Status:</Text>
                       <StatusSelector 
                         currentStatus={userStatus}
-                        onStatusChange={(status, reason) => {
+                        onStatusChange={(status) => {
                           setUserStatus(status);
-                          console.log('Status changed to:', status, reason);
                         }}
                       />
                     </View>
@@ -199,13 +193,13 @@ export default function RoomScreen({ navigation, route }) {
                   
                   {isSelected && isEventLocked && (
                     <View style={[styles.trackingBadgeSmall, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
-                      <Text style={styles.trackingTextSmall}>🔒 GPS Locked</Text>
+                      <Text style={styles.trackingTextSmall}>GPS Locked</Text>
                     </View>
                   )}
                   
                   {isSelected && (
                     <View style={styles.selectedIndicator}>
-                      <Text style={styles.selectedText}>✔ Selected for Map View</Text>
+                      <Text style={styles.selectedText}>Selected for Map View</Text>
                     </View>
                   )}
 
@@ -229,7 +223,7 @@ export default function RoomScreen({ navigation, route }) {
                       navigation.navigate('Map');
                     }}
                   >
-                    <Text style={styles.actionButtonText}>🗺️ Map</Text>
+                    <Text style={styles.actionButtonText}>Map</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
@@ -278,7 +272,7 @@ export default function RoomScreen({ navigation, route }) {
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity onPress={() => setAttendeeModalRoom(null)}>
-                    <Text style={styles.modalClose}>✕</Text>
+                    <Text style={styles.modalClose}>X</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -783,12 +777,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  attendeeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F1F5F9',
-    marginBottom: 4,
-  },
   attendeeEmail: {
     fontSize: 14,
     color: '#94A3B8',
@@ -797,18 +785,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#3B82F6',
     marginTop: 4,
-    fontWeight: '600',
-  },
-  detailButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#3B82F6',
-  },
-  detailButtonText: {
-    color: '#3B82F6',
-    fontSize: 14,
     fontWeight: '600',
   },
   emptyText: {

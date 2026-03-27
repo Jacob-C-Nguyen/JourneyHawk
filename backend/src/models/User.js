@@ -1,4 +1,3 @@
-// src/models/User.js
 // Functional Req 2 & 3: User schema for authentication and account management
 // - Password hashed with bcrypt (10 salt rounds) before save
 // - Role enum enforces host/attendee separation (Use Case Diagram Fig 3.2)

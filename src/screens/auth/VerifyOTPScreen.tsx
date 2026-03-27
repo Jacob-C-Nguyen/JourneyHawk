@@ -1,4 +1,3 @@
-// src/screens/auth/VerifyOTPScreen.tsx
 // Collects 6-digit OTP sent to user's email and verifies account
 import React, { useState, useRef, useEffect } from 'react';
 import {

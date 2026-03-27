@@ -1,4 +1,5 @@
-// src/contexts/NotificationContext.js
+// Req 6: Listens globally for new-notification socket events and shows in-app alert
+// Req 7: Alert includes a "View" button that navigates to the Notifications tab
 import React, { createContext, useContext, useEffect } from 'react';
 import { Alert } from 'react-native';
 import SocketService from '../services/socket';
@@ -21,17 +22,12 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('📡 [Global] Setting up notification system for user:', user._id);
-
-    // Wait for socket to connect before joining notifications
+    // Req 6: Join personal notification channel once socket is ready
     const joinWithDelay = () => {
-      // Check if socket is connected
       const checkAndJoin = () => {
         if (SocketService.getStatus().isConnected) {
-          // Join user's personal notification channel
           SocketService.joinNotifications(user._id);
         } else {
-          // Retry after 500ms
           setTimeout(checkAndJoin, 500);
         }
       };
@@ -40,11 +36,8 @@ export const NotificationProvider = ({ children }) => {
 
     joinWithDelay();
 
-    // Listen for real-time notifications globally
+    // Req 6/7: Show alert popup when a notification arrives in real-time
     const handleNotification = (data) => {
-      console.log('🔔 [Global] Notification received:', data.notification);
-
-      // Show in-app alert popup
       Alert.alert(
         data.notification.title || 'New Notification',
         data.notification.message,
@@ -52,7 +45,6 @@ export const NotificationProvider = ({ children }) => {
           {
             text: 'View',
             onPress: () => {
-              // Navigate to Notifications tab using navigationRef
               navigate('Notifications');
             },
           },
@@ -61,16 +53,13 @@ export const NotificationProvider = ({ children }) => {
       );
     };
 
-    // Listen for the 'new-notification' event
     SocketService.on('new-notification', handleNotification);
 
     return () => {
-      // Leave notification channel
       if (SocketService.getStatus().isConnected) {
         SocketService.leaveNotifications(user._id);
       }
       SocketService.off('new-notification', handleNotification);
-      console.log('🔌 [Global] Removed notification listener and left channel');
     };
   }, [user]);
 

@@ -1,18 +1,15 @@
-// src/services/pushNotificationService.js
+// Req 6/7: Sends push notifications to devices via Expo push notification service
 const { Expo } = require('expo-server-sdk');
 const expo = new Expo();
 
-/**
- * Send push notification to a single user
- */
+// Req 7: Delivers push alert to a single user's registered device
 const sendPushNotification = async (pushToken, title, body, data = {}) => {
   if (!pushToken) {
-    console.log('⚠️ No push token provided');
     return null;
   }
 
   if (!Expo.isExpoPushToken(pushToken)) {
-    console.error(`❌ Push token ${pushToken} is not a valid Expo push token`);
+    console.error(`Invalid Expo push token: ${pushToken}`);
     return null;
   }
 
@@ -28,19 +25,15 @@ const sendPushNotification = async (pushToken, title, body, data = {}) => {
 
   try {
     const ticket = await expo.sendPushNotificationsAsync([message]);
-    console.log('📲 Push notification sent:', ticket);
     return ticket;
   } catch (error) {
-    console.error('❌ Error sending push notification:', error);
+    console.error('Error sending push notification:', error);
     return null;
   }
 };
 
-/**
- * Send push notifications to multiple users
- */
+// Req 7: Delivers push alerts to all attendees with registered devices
 const sendPushToMultipleUsers = async (users, title, body, data = {}) => {
-  // Filter users with valid push tokens
   const messages = users
     .filter(user => user.pushToken && Expo.isExpoPushToken(user.pushToken))
     .map(user => ({
@@ -54,12 +47,10 @@ const sendPushToMultipleUsers = async (users, title, body, data = {}) => {
     }));
 
   if (messages.length === 0) {
-    console.log('⚠️ No valid push tokens found');
     return [];
   }
 
   try {
-    // Expo recommends chunking notifications
     const chunks = expo.chunkPushNotifications(messages);
     const tickets = [];
 
@@ -68,10 +59,9 @@ const sendPushToMultipleUsers = async (users, title, body, data = {}) => {
       tickets.push(...ticketChunk);
     }
 
-    console.log(`📲 Sent ${tickets.length} push notifications`);
     return tickets;
   } catch (error) {
-    console.error('❌ Error sending push notifications:', error);
+    console.error('Error sending push notifications:', error);
     return [];
   }
 };

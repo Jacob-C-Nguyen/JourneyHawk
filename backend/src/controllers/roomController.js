@@ -1,4 +1,3 @@
-// src/controllers/roomController.js
 const Room = require('../models/Room');
 const Location = require('../models/Location');
 const generateRoomCode = require('../utils/generateRoomCode');
@@ -100,7 +99,6 @@ exports.joinRoom = async (req, res) => {
       room,
     });
 
-    console.log(`🔔 User ${req.user.username} joined room ${room.name}`);
 
     res.status(200).json({
       success: true,
@@ -234,7 +232,6 @@ exports.leaveRoom = async (req, res) => {
       username: req.user.username,
     });
 
-    console.log(`🔔 User ${req.user.username} left room and locations deleted`);
 
     res.status(200).json({
       success: true,
@@ -371,7 +368,6 @@ exports.deleteRoom = async (req, res) => {
 
     await room.deleteOne();
 
-    console.log(`🔔 Room ${room.name} deleted along with all location records`);
 
     res.status(200).json({
       success: true,

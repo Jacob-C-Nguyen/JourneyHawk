@@ -1,12 +1,5 @@
-// src/screens/map/MapRadarScreen.js
-// Functional Req 8: Displays map showing user locations when clicking map icon
-// Functional Req 9: Search bar to find individual attendee by name, phone, or email
-// - Role-based visibility: attendees see only hosts, hosts see everyone
-// - Real-time location updates via Socket.io
-// - Radar circles around user position
-// - Color-coded markers (blue=host, green=attendee, orange=away, red=outside geofence)
-// - Auto-zoom to searched person
-// - GPS locked view when event hasn't started yet
+// Req 8: Displays live map with attendee locations when clicking the map icon
+// Req 9: Search bar filters visible markers by name, phone, or email
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import {
   View,
@@ -109,7 +102,6 @@ export default function MapRadarScreen() {
 
     // Listen for real-time location updates via socket
     SocketService.on('location-update', (locationData) => {
-      console.log('📍 Real-time location update:', locationData.username);
       
       // Update locations state in real-time
       setAttendeeLocations(prevLocations => {
@@ -122,7 +114,6 @@ export default function MapRadarScreen() {
 
     // Listen for users leaving - remove them from map
     SocketService.on('user-left', (data) => {
-      console.log('🔔 [MapRadar] User left, removing from map:', data.username);
       
       // Remove user from locations immediately
       setAttendeeLocations(prevLocations => 
@@ -149,7 +140,6 @@ export default function MapRadarScreen() {
     } catch (error) {
       // Check if room was deleted (404 error)
       if (error.response?.status === 404) {
-        console.log('Room no longer exists while fetching locations');
         stopFetchingLocations();
         
         Alert.alert(
@@ -198,12 +188,12 @@ export default function MapRadarScreen() {
   // Helper to get status emoji
   const getStatusEmoji = (status) => {
     const statusMap = {
-      'present': '✅',
-      'away-restroom': '🚻',
-      'away-switching': '👥',
-      'away-other': '⚠️',
+      'present': '',
+      'away-restroom': '(Restroom)',
+      'away-switching': '(Switching)',
+      'away-other': '(Away)',
     };
-    return statusMap[status] || '✅';
+    return statusMap[status] ?? '';
   };
 
   // Helper to get status label
@@ -351,7 +341,7 @@ export default function MapRadarScreen() {
     return (
       <View style={styles.lockedContainer}>
         <View style={styles.lockIcon}>
-          <Text style={styles.lockEmoji}>🔒</Text>
+          <Text style={styles.lockEmoji}>[ Locked ]</Text>
         </View>
         
         <Text style={styles.lockedTitle}>Map Not Available Yet</Text>
@@ -360,7 +350,7 @@ export default function MapRadarScreen() {
         <View style={styles.eventInfoBox}>
           <Text style={styles.eventInfoTitle}>{activeRoom.name}</Text>
           <Text style={styles.eventInfoDate}>
-            📅 {startDate.toLocaleDateString('en-US', {
+            {startDate.toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
@@ -383,7 +373,7 @@ export default function MapRadarScreen() {
         )}
         
         <Text style={styles.securityNote}>
-          🛡️ For your privacy and security, location tracking will begin when the event starts
+          For your privacy and security, location tracking will begin when the event starts
         </Text>
       </View>
     );
@@ -474,7 +464,7 @@ export default function MapRadarScreen() {
         <Text style={styles.roomName}>{activeRoom.name}</Text>
         {searchQuery ? (
           <Text style={styles.searchResultsText}>
-            🔍 {visibleLocations.length} {visibleLocations.length === 1 ? 'result' : 'results'} for "{searchQuery}"
+            {visibleLocations.length} {visibleLocations.length === 1 ? 'result' : 'results'} for "{searchQuery}"
           </Text>
         ) : (
           <>

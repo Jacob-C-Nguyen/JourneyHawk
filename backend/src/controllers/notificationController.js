@@ -1,4 +1,3 @@
-// src/controllers/notificationController.js
 const Notification = require('../models/Notification');
 const Room = require('../models/Room');
 
@@ -65,7 +64,6 @@ exports.sendNotification = async (req, res) => {
       },
     });
 
-    console.log(`🔔 Notification sent to user: ${toUserId}`);
 
     res.status(201).json({
       success: true,
@@ -145,7 +143,6 @@ exports.sendNotificationToRoom = async (req, res) => {
       });
     }
 
-    console.log(`🔔 Notification sent to ${notifications.length} attendees in room ${room.name}`);
 
     res.status(201).json({
       success: true,

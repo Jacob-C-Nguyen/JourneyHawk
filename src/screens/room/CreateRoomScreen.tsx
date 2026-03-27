@@ -1,10 +1,5 @@
-// src/screens/room/CreateRoomScreen.js
-// Functional Req 18: Allows host to create an event/room with date, time, location
-// Functional Req 15: Room code generated for inviting attendees
-// - Form inputs: room name, location, start/end date-time, notes
-// - Optional geofence safety zone with configurable radius
-// - Auto-generates unique 8-character room code
-// - Uses native DateTimePicker for date/time selection
+// Req 18: Allows host to create an event with name, location, date/time, and notes
+// Req 15: Backend auto-generates a unique room code used to invite attendees
 import React, { useState } from 'react';
 import {
   View,
@@ -151,13 +146,13 @@ export default function CreateRoomScreen() {
             style={styles.dateTimeButton}
             onPress={() => setShowStartDatePicker(true)}
           >
-            <Text style={styles.dateTimeButtonText}>📅 {formatDate(startDate)}</Text>
+            <Text style={styles.dateTimeButtonText}>{formatDate(startDate)}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dateTimeButton}
             onPress={() => setShowStartTimePicker(true)}
           >
-            <Text style={styles.dateTimeButtonText}>🕐 {formatTime(startDate)}</Text>
+            <Text style={styles.dateTimeButtonText}>{formatTime(startDate)}</Text>
           </TouchableOpacity>
         </View>
 
@@ -222,7 +217,7 @@ export default function CreateRoomScreen() {
                 style={styles.dateTimeButton}
                 onPress={() => setShowEndTimePicker(true)}
               >
-                <Text style={styles.dateTimeButtonText}>🕐 {formatTime(endDate)}</Text>
+                <Text style={styles.dateTimeButtonText}>{formatTime(endDate)}</Text>
               </TouchableOpacity>
             </View>
 
@@ -306,7 +301,7 @@ export default function CreateRoomScreen() {
               keyboardType="numeric"
             />
             <Text style={styles.helperText}>
-              🔔 You'll be alerted if attendees go beyond {geofenceRadius || '100'}m from you
+              You'll be alerted if attendees go beyond {geofenceRadius || '100'}m from you
             </Text>
           </View>
         )}

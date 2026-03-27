@@ -1,4 +1,7 @@
-// src/contexts/RoomContext.js
+// Req 8: Starts GPS location tracking when user enters an active room
+// Req 10: Loads and persists the user's active room across tab switches
+// Req 12: Handles real-time attendee removal and room deletion via socket events
+// Req 13/14: Updates attendee list in real-time when users join or leave
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -31,12 +34,10 @@ export const RoomProvider = ({ children }) => {
     activeRoomRef.current = activeRoom;
   }, [activeRoom]);
 
-  // Load active room on mount
   useEffect(() => {
     loadActiveRoom();
   }, []);
 
-  // Setup socket listeners once — use activeRoomRef inside handlers
   useEffect(() => {
     setupSocketListeners();
     return () => {
@@ -44,7 +45,7 @@ export const RoomProvider = ({ children }) => {
     };
   }, []);
 
-  // Start tracking and join socket room when active room changes
+  // Req 8: Start or stop GPS tracking when active room changes
   useEffect(() => {
     if (activeRoom && !isTracking) {
       startTracking();
@@ -66,6 +67,7 @@ export const RoomProvider = ({ children }) => {
     }
   };
 
+  // Req 10: Persists selected room to SecureStore so it survives tab switches
   const setCurrentRoom = useCallback(async (room) => {
     try {
       setActiveRoom(room);
@@ -84,18 +86,17 @@ export const RoomProvider = ({ children }) => {
     }
   }, []);
 
+  // Req 10: Fetches all rooms the user belongs to and syncs active room state
   const loadUserRooms = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await roomAPI.getUserRooms();
       setRooms(response.data);
 
-      // Read from SecureStore to avoid stale closure issues
       const savedRoom = await SecureStore.getItemAsync('activeRoom');
       const currentActiveRoom = savedRoom ? JSON.parse(savedRoom) : null;
 
       if (response.data.length > 0 && !currentActiveRoom) {
-        // No room selected yet — pick the first one
         await setCurrentRoom(response.data[0]);
       } else if (currentActiveRoom) {
         const updatedActiveRoom = response.data.find(room => room._id === currentActiveRoom._id);
@@ -118,29 +119,27 @@ export const RoomProvider = ({ children }) => {
     }
   }, [setCurrentRoom, clearCurrentRoom]);
 
+  // Req 8: Requests location permissions and begins GPS polling for the active room
   const startTracking = async () => {
     if (!activeRoom || isTracking) return;
 
-    // Check if room has a start date and hasn't started yet
     if (activeRoom.startDate) {
       const startDate = new Date(activeRoom.startDate);
       const now = new Date();
       if (now < startDate) {
-        console.log('⚠️ Location tracking disabled - event has not started yet');
-        return; // Don't start tracking until event begins
+        return;
       }
     }
 
     try {
       const permissions = await LocationService.requestPermissions();
-      
+
       if (!permissions.foreground) {
         throw new Error('Location permission denied');
       }
 
       await LocationService.startTracking(activeRoom._id);
       setIsTracking(true);
-      console.log('Location tracking started for room:', activeRoom.name);
     } catch (error) {
       console.error('Error starting location tracking:', error);
       throw error;
@@ -151,22 +150,17 @@ export const RoomProvider = ({ children }) => {
     try {
       await LocationService.stopTracking();
       setIsTracking(false);
-      console.log('Location tracking stopped');
     } catch (error) {
       console.error('Error stopping location tracking:', error);
     }
   };
 
+  // Req 13: Updates attendee list when a user joins any room the current user is in
   const setupSocketListeners = () => {
-    // Listen for new users joining ANY room
     SocketService.on('user-joined', (data) => {
-      console.log('🔔 [Global] User joined:', data.user.username, 'in room:', data.roomId);
-      
-      // Update the specific room in the rooms array
-      setRooms(prevRooms => 
+      setRooms(prevRooms =>
         prevRooms.map(room => {
           if (room._id === data.roomId) {
-            // Check if user already exists
             const userExists = room.attendees.some(a => a._id === data.user._id);
             if (!userExists) {
               return {
@@ -178,8 +172,7 @@ export const RoomProvider = ({ children }) => {
           return room;
         })
       );
-      
-      // Also update activeRoom if it matches
+
       if (activeRoomRef.current?._id === data.roomId) {
         setActiveRoom(prev => {
           if (!prev) return prev;
@@ -192,12 +185,9 @@ export const RoomProvider = ({ children }) => {
       }
     });
 
-    // Listen for users leaving ANY room
+    // Req 12: Removes user from attendee list when they leave or are removed
     SocketService.on('user-left', (data) => {
-      console.log('🔔 [Global] User left:', data.username, 'from room:', data.roomId);
-      
-      // Update the specific room in the rooms array
-      setRooms(prevRooms => 
+      setRooms(prevRooms =>
         prevRooms.map(room => {
           if (room._id === data.roomId) {
             return {
@@ -208,8 +198,7 @@ export const RoomProvider = ({ children }) => {
           return room;
         })
       );
-      
-      // Also update activeRoom if it matches
+
       if (activeRoomRef.current?._id === data.roomId) {
         setActiveRoom(prev => {
           if (!prev) return prev;
@@ -218,27 +207,20 @@ export const RoomProvider = ({ children }) => {
       }
     });
 
-    // Listen for room deletion (only show alerts for attendees, not the host who deleted it)
+    // Req 12: Notifies attendees when the host deletes the room
     SocketService.on('room-deleted', async (data) => {
-      console.log('🔔 [Global] Room deleted:', data.roomName);
-      
-      // If this host initiated the delete, just clean up silently
       if (data.deletedByUserId === currentUserId) {
-        console.log('We deleted this room, skipping alert');
         setRooms(prevRooms => prevRooms.filter(room => room._id !== data.roomId));
         return;
       }
-      
-      // Use functional setState to get current rooms and check if user is in this room
+
       setRooms(prevRooms => {
         const roomExists = prevRooms.some(room => room._id === data.roomId);
-        
+
         if (!roomExists) {
-          console.log('Not in this room, ignoring deletion event');
-          return prevRooms; // Don't show alert if not in the room
+          return prevRooms;
         }
-        
-        // Room exists in user's rooms, show appropriate alert
+
         if (activeRoomRef.current?._id === data.roomId) {
           Alert.alert(
             'Room Deleted',
@@ -246,15 +228,13 @@ export const RoomProvider = ({ children }) => {
             [{ text: 'OK', onPress: () => handleRoomDeleted() }]
           );
         } else {
-          // Just show a non-blocking alert for other rooms user is still in
           Alert.alert(
             'Room Deleted',
             `"${data.roomName}" has been deleted by the host.`,
             [{ text: 'OK' }]
           );
         }
-        
-        // Remove room from array
+
         return prevRooms.filter(room => room._id !== data.roomId);
       });
     });
@@ -267,7 +247,6 @@ export const RoomProvider = ({ children }) => {
   };
 
   const handleRoomDeleted = async () => {
-    console.log('Room was deleted, cleaning up...');
     await clearCurrentRoom();
   };
 
