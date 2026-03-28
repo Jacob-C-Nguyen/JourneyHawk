@@ -16,6 +16,9 @@ const notificationRoutes = require('./routes/notificationRoutes');
 // Connect to database
 connectDB();
 
+//Makes sure the counter DB is active
+require('./models/Counter');
+
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);

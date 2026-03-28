@@ -25,9 +25,24 @@ import { locationAPI } from '../../services/api';
 import LocationService from '../../services/location';
 import SocketService from '../../services/socket';
 
+
+
+
+import BLEService from '../../services/bleService';
+import Constants from 'expo-constants';
+
+
+
+
+
 export default function MapRadarScreen() {
   const { user } = useAuth();
   const { activeRoom, handleRoomDeleted } = useRoom();
+
+
+  const API_URL = Constants?.expoConfig?.extra?.apiUrl;
+
+
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +50,13 @@ export default function MapRadarScreen() {
   const mapRef = useRef(null);
   const locationUpdateInterval = useRef(null);
 
+
+
+  const [bleConnected, setBleConnected] = useState(false);
+  const [bleStatus, setBleStatus] = useState("Idle");
+
+
+  
   // Check if current user is a host
   const isHost = user?.role === 'host';
 
@@ -55,10 +77,14 @@ export default function MapRadarScreen() {
     };
   }, [isHost]);
 
+
   useEffect(() => {
     if (activeRoom) {
       initializeMap();
       startFetchingLocations();
+      setTimeout(() => {
+        startBLE();
+      }, 1000);
     } else {
       stopFetchingLocations();
       setLoading(false);
@@ -66,11 +92,14 @@ export default function MapRadarScreen() {
 
     return () => {
       stopFetchingLocations();
+      BLEService.disconnect();
     };
   }, [activeRoom]);
 
   const initializeMap = async () => {
     try {
+      console.log("📍 Initializing map...");
+
       setLoading(true);
       
       // Get current location
@@ -94,6 +123,7 @@ export default function MapRadarScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
+      console.log("✅ Location set:", currentLocation.coords);
 
       setLoading(false);
     } catch (error) {
@@ -101,6 +131,7 @@ export default function MapRadarScreen() {
       Alert.alert('Error', 'Could not load your location');
       setLoading(false);
     }
+
   };
 
   const startFetchingLocations = () => {
@@ -234,7 +265,7 @@ export default function MapRadarScreen() {
     if (!activeRoom?.startDate) return null;
     const startDate = new Date(activeRoom.startDate);
     const now = new Date();
-    const diff = startDate - now;
+    const diff = startDate.getTime() - now.getTime();
     
     if (diff <= 0) return null;
     
@@ -287,6 +318,88 @@ export default function MapRadarScreen() {
     }
   }, [searchQuery, visibleLocations, location]);
 
+
+
+
+
+
+
+  const startBLE = async () => {
+    try {
+      setBleStatus("Starting BLE...");
+
+      await BLEService.requestPermissions();
+
+      setBleStatus("Scanning...");
+
+      BLEService.scanAndConnect(async (data) => {
+        try {
+          setBleStatus("📡 Received data!");
+          setBleConnected(true);
+
+          await fetch(`${API_URL}/location`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: user?._id,
+              roomId: activeRoom?._id,
+              raw: data,
+              timestamp: Date.now(),
+            }),
+          });
+
+        } catch (err) {
+          setBleStatus("❌ Callback error");
+        }
+      });
+
+    } catch (err) {
+      setBleStatus("❌ BLE failed to start");
+    }
+  };
+
+  // const startBLE = async () => {
+  //   try {
+  //     console.log("🔵 Starting BLE...");
+
+  //     await BLEService.requestPermissions();
+
+  //     BLEService.scanAndConnect(async (data) => {
+  //       try {
+  //         console.log("📡 BLE RAW:", data);
+  //         setBleConnected(true);
+
+  //         await fetch(`${API_URL}/location`, {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //           },
+  //           body: JSON.stringify({
+  //             userId: user?._id,
+  //             roomId: activeRoom?._id,
+  //             raw: data,
+  //             timestamp: Date.now(),
+  //           }),
+  //         });
+
+  //       } catch (err) {
+  //         console.log("❌ BLE callback error:", err);
+  //       }
+  //     });
+
+  //   } catch (err) {
+  //     console.log("❌ BLE start error:", err);
+  //   }
+  // };
+
+
+
+
+
+
+
   // No active room - show placeholder (Figure 4.1.10 placeholder)
   if (!activeRoom) {
     return (
@@ -330,6 +443,34 @@ export default function MapRadarScreen() {
       </View>
     );
   }
+
+
+
+
+
+
+
+  if (!location) {
+    <View style={{
+      position: 'absolute',
+      bottom: 120,
+      left: 10,
+      right: 10,
+      backgroundColor: 'black',
+      padding: 10,
+      borderRadius: 8
+    }}>
+      <Text style={{ color: 'white' }}>
+        BLE: {bleStatus}
+      </Text>
+    </View>
+  }
+
+
+
+
+  
+
 
   // Map failed to load
   if (!location) {

@@ -11,6 +11,11 @@ const appJson = require('./app.json');
 export default {
   ...appJson.expo,
   extra: {
+    ...(appJson.expo.extra || {}),
     apiUrl: process.env.API_URL || 'http://192.168.86.38:3000/api',
+    eas: {
+      projectId: "a827226e-54cb-4693-bda5-dbaf38842f5b",
+    },
   },
 };
+
