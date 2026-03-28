@@ -13,6 +13,7 @@ class SocketService {
     this.socket = null;
     this.isConnected = false;
     this.currentRoomId = null;
+    this.currentNotificationUserId = null;
   }
 
   connect(token) {
@@ -35,6 +36,9 @@ class SocketService {
       if (this.currentRoomId) {
         this.joinRoom(this.currentRoomId);
       }
+      if (this.currentNotificationUserId) {
+        this.joinNotifications(this.currentNotificationUserId);
+      }
     });
 
     this.socket.on('disconnect', () => {
@@ -52,6 +56,7 @@ class SocketService {
       this.socket = null;
       this.isConnected = false;
       this.currentRoomId = null;
+      this.currentNotificationUserId = null;
     }
   }
 
@@ -70,6 +75,7 @@ class SocketService {
 
   // Req 6/7: Join personal notification channel to receive alerts
   joinNotifications(userId) {
+    this.currentNotificationUserId = userId; // Always save so the connect handler can re-join after reconnect
     if (!this.socket || !userId) return;
     this.socket.emit('join-notifications', userId);
   }

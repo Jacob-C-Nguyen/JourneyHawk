@@ -15,6 +15,7 @@ import {
   Alert,
   Platform,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { notificationAPI } from '../../services/api';
@@ -36,6 +37,8 @@ export default function NotificationsScreen() {
   const [notificationType, setNotificationType] = useState('message');
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [recipientMode, setRecipientMode] = useState<'all' | 'individual'>('all');
+  const [selectedAttendee, setSelectedAttendee] = useState<any>(null);
 
   // Req 6: Only host of the active room can send notifications
   const isHost = activeRoom?.host?._id === user?._id;
@@ -77,7 +80,16 @@ export default function NotificationsScreen() {
     }
   };
 
-  // Req 7: Host sends notification to all attendees in the active room
+  const closeModal = () => {
+    setShowSendModal(false);
+    setNotificationTitle('');
+    setNotificationMessage('');
+    setNotificationType('message');
+    setRecipientMode('all');
+    setSelectedAttendee(null);
+  };
+
+  // Req 7: Host sends notification to all attendees or a specific individual
   const handleSendNotification = async () => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -94,21 +106,34 @@ export default function NotificationsScreen() {
       return;
     }
 
+    if (recipientMode === 'individual' && !selectedAttendee) {
+      Alert.alert('Error', 'Please select an attendee');
+      return;
+    }
+
     try {
       setSending(true);
 
-      await notificationAPI.sendToRoom({
-        roomId: activeRoom._id,
-        type: notificationType,
-        title: notificationTitle,
-        message: notificationMessage,
-      });
+      if (recipientMode === 'all') {
+        await notificationAPI.sendToRoom({
+          roomId: activeRoom._id,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage,
+        });
+        Alert.alert('Success', 'Notification sent to all attendees!');
+      } else {
+        await notificationAPI.send({
+          toUserId: selectedAttendee._id,
+          roomId: activeRoom._id,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage,
+        });
+        Alert.alert('Success', `Notification sent to ${selectedAttendee.username}!`);
+      }
 
-      Alert.alert('Success', 'Notification sent to all attendees!');
-
-      setNotificationTitle('');
-      setNotificationMessage('');
-      setShowSendModal(false);
+      closeModal();
     } catch (error) {
       console.error('Error sending notification:', error);
       Alert.alert('Error', 'Failed to send notification');
@@ -251,72 +276,111 @@ export default function NotificationsScreen() {
         visible={showSendModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowSendModal(false)}
+        onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Send Notification</Text>
-              <TouchableOpacity onPress={() => setShowSendModal(false)}>
+              <TouchableOpacity onPress={closeModal}>
                 <Text style={styles.modalClose}>×</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>Type</Text>
-            <View style={styles.typeSelector}>
-              {['message', 'alert', 'location_alert'].map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.typeButton,
-                    notificationType === type && styles.typeButtonActive,
-                  ]}
-                  onPress={() => setNotificationType(type)}
-                >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      notificationType === type && styles.typeButtonTextActive,
-                    ]}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>Send To</Text>
+              <View style={styles.typeSelector}>
+                {(['all', 'individual'] as const).map((mode) => (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[styles.typeButton, recipientMode === mode && styles.typeButtonActive]}
+                    onPress={() => { setRecipientMode(mode); setSelectedAttendee(null); }}
                   >
-                    {type.replace('_', ' ')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    <Text style={[styles.typeButtonText, recipientMode === mode && styles.typeButtonTextActive]}>
+                      {mode === 'all' ? 'All Attendees' : 'Individual'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Notification title..."
-              value={notificationTitle}
-              onChangeText={setNotificationTitle}
-            />
-
-            <Text style={styles.label}>Message</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Your message..."
-              value={notificationMessage}
-              onChangeText={setNotificationMessage}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-
-            <TouchableOpacity
-              style={[styles.sendButton, sending && styles.buttonDisabled]}
-              onPress={handleSendNotification}
-              disabled={sending}
-            >
-              {sending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.sendButtonText}>
-                  Send to All Attendees ({activeRoom?.attendees?.length - 1 || 0})
-                </Text>
+              {recipientMode === 'individual' && (
+                <>
+                  <Text style={styles.label}>Select Attendee</Text>
+                  {activeRoom?.attendees
+                    ?.filter((a: any) => a._id !== user?._id)
+                    .map((attendee: any, index: number) => (
+                      <TouchableOpacity
+                        key={attendee._id ? String(attendee._id) : `attendee-${index}`}
+                        style={[
+                          styles.attendeeItem,
+                          selectedAttendee?._id === attendee._id && styles.attendeeItemSelected,
+                        ]}
+                        onPress={() => setSelectedAttendee(attendee)}
+                      >
+                        <View style={styles.attendeeAvatar}>
+                          <Text style={styles.attendeeAvatarText}>
+                            {attendee.username?.[0]?.toUpperCase()}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={styles.attendeeName}>{attendee.username}</Text>
+                          <Text style={styles.attendeeRole}>{attendee.role?.toUpperCase()}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                </>
               )}
-            </TouchableOpacity>
+
+              <Text style={styles.label}>Type</Text>
+              <View style={styles.typeSelector}>
+                {['message', 'alert', 'location_alert'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.typeButton, notificationType === type && styles.typeButtonActive]}
+                    onPress={() => setNotificationType(type)}
+                  >
+                    <Text style={[styles.typeButtonText, notificationType === type && styles.typeButtonTextActive]}>
+                      {type.replace('_', ' ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Notification title..."
+                value={notificationTitle}
+                onChangeText={setNotificationTitle}
+              />
+
+              <Text style={styles.label}>Message</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Your message..."
+                value={notificationMessage}
+                onChangeText={setNotificationMessage}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <TouchableOpacity
+                style={[styles.sendButton, sending && styles.buttonDisabled]}
+                onPress={handleSendNotification}
+                disabled={sending}
+              >
+                {sending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.sendButtonText}>
+                    {recipientMode === 'all'
+                      ? `Send to All Attendees (${(activeRoom?.attendees?.length ?? 1) - 1})`
+                      : `Send to ${selectedAttendee ? selectedAttendee.username : '...'}`}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -515,12 +579,51 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
   },
+  attendeeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  attendeeItemSelected: {
+    backgroundColor: '#e8f0fe',
+    borderColor: '#007AFF',
+  },
+  attendeeAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  attendeeAvatarText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  attendeeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+  attendeeRole: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
+  },
   sendButton: {
     backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 10,
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
