@@ -1,5 +1,3 @@
-// Req 8: Manages phone GPS tracking and sends coordinate updates to the backend
-// Req 21: Stops tracking automatically when the user exits the app
 import * as Location from 'expo-location';
 import { locationAPI } from './api';
 
@@ -12,7 +10,6 @@ class LocationService {
     this.currentStatusReason = '';
   }
 
-  // Req 8: Updates attendee status and immediately sends a location update with the new status
   async updateStatus(status, reason = '') {
     this.currentStatus = status;
     this.currentStatusReason = reason;
@@ -27,7 +24,6 @@ class LocationService {
     }
   }
 
-  // Req 8: Requests foreground and background location permissions
   async requestPermissions() {
     try {
       const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
@@ -66,7 +62,6 @@ class LocationService {
     }
   }
 
-  // Req 8: Starts polling GPS every 10 seconds or 10 meters of movement
   async startTracking(roomId) {
     if (this.isTracking) {
       return;
@@ -127,7 +122,6 @@ class LocationService {
     }
   }
 
-  // Req 21: Stops GPS polling and clears room association
   async stopTracking() {
     if (this.locationSubscription) {
       this.locationSubscription.remove();

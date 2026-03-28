@@ -1,9 +1,3 @@
-// Req 10: Switches user to room screen and displays all rooms they belong to
-// Req 11: View attendee list with name and phone in a bottom sheet modal
-// Req 12: Host can remove attendees or delete the room entirely
-// Req 13: Attendees join in real-time via Socket.io events
-// Req 14: Hosts can join another host's room via room code
-// Req 15: Host can invite attendees by phone number from attendee modal
 import React, { useEffect, useState } from 'react';
 import {
   View,

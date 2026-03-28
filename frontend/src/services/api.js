@@ -1,9 +1,3 @@
-// Core API service - all backend communication flows through here
-// - Axios instance with JWT token auto-injection via interceptor
-// - Auth API: signup (Req 3), login (Req 2)
-// - Room API: create (Req 15, 18), join (Req 13, 14), leave (Req 12), getUserRooms (Req 10)
-// - Location API: update (Req 8), getRoomLocations (Req 9)
-// - Notification API: getAll (Req 6), sendToRoom (Req 7), markAsRead, delete
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
@@ -71,11 +65,6 @@ export const authAPI = {
 
   getMe: async () => {
     const response = await api.get('/auth/me');
-    return response.data;
-  },
-
-  verifyEmail: async (email, otp) => {
-    const response = await api.post('/auth/verify-email', { email, otp });
     return response.data;
   },
 

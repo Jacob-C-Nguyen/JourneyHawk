@@ -1,6 +1,3 @@
-// Req 8: Delivers real-time location-update events so the map refreshes instantly
-// Req 6/7: Delivers new-notification events for in-app alert popups
-// Req 13/14: Broadcasts user-joined and user-left events for room membership changes
 import { io } from 'socket.io-client';
 import Constants from 'expo-constants';
 
@@ -60,7 +57,6 @@ class SocketService {
     }
   }
 
-  // Req 8: Join room channel to receive location updates for that room
   joinRoom(roomId) {
     this.currentRoomId = roomId; // Always save so the connect handler can re-join after cold start
     if (!this.socket || !roomId) return;
@@ -73,7 +69,6 @@ class SocketService {
     this.currentRoomId = null;
   }
 
-  // Req 6/7: Join personal notification channel to receive alerts
   joinNotifications(userId) {
     this.currentNotificationUserId = userId; // Always save so the connect handler can re-join after reconnect
     if (!this.socket || !userId) return;

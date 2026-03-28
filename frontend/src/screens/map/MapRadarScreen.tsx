@@ -1,5 +1,3 @@
-// Req 8: Displays live map with attendee locations when clicking the map icon
-// Req 9: Search bar filters visible markers by name, phone, or email
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import {
   View,

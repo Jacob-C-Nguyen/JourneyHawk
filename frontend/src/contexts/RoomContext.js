@@ -1,7 +1,3 @@
-// Req 8: Starts GPS location tracking when user enters an active room
-// Req 10: Loads and persists the user's active room across tab switches
-// Req 12: Handles real-time attendee removal and room deletion via socket events
-// Req 13/14: Updates attendee list in real-time when users join or leave
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -44,7 +40,6 @@ export const RoomProvider = ({ children }) => {
     return cleanup;
   }, [currentUserId]);
 
-  // Req 8: Start or stop GPS tracking when active room changes
   useEffect(() => {
     if (activeRoom && !isTracking) {
       startTracking();
@@ -66,7 +61,6 @@ export const RoomProvider = ({ children }) => {
     }
   };
 
-  // Req 10: Persists selected room to SecureStore so it survives tab switches
   const setCurrentRoom = useCallback(async (room) => {
     try {
       setActiveRoom(room);
@@ -85,7 +79,6 @@ export const RoomProvider = ({ children }) => {
     }
   }, []);
 
-  // Req 10: Fetches all rooms the user belongs to and syncs active room state
   const loadUserRooms = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -118,7 +111,6 @@ export const RoomProvider = ({ children }) => {
     }
   }, [setCurrentRoom, clearCurrentRoom]);
 
-  // Req 8: Requests location permissions and begins GPS polling for the active room
   const startTracking = async () => {
     if (!activeRoom || isTracking) return;
 
@@ -154,7 +146,6 @@ export const RoomProvider = ({ children }) => {
     }
   };
 
-  // Req 13: Updates attendee list when a user joins any room the current user is in
   const setupSocketListeners = () => {
     const onUserJoined = (data) => {
       setRooms(prevRooms =>
@@ -181,7 +172,6 @@ export const RoomProvider = ({ children }) => {
       }
     };
 
-    // Req 12: Removes user from attendee list when they leave or are removed
     const onUserLeft = (data) => {
       setRooms(prevRooms =>
         prevRooms.map(room => {
@@ -194,7 +184,6 @@ export const RoomProvider = ({ children }) => {
 
       if (activeRoomRef.current?._id === data.roomId) {
         if (data.userId === currentUserId) {
-          // Req 12: Current user was removed by the host — clear their active room
           Alert.alert(
             'Removed from Room',
             'You have been removed from this room by the host.',
@@ -209,7 +198,6 @@ export const RoomProvider = ({ children }) => {
       }
     };
 
-    // Req 12: Notifies attendees when the host deletes the room
     const onRoomDeleted = (data) => {
       if (data.deletedByUserId === currentUserId) {
         setRooms(prevRooms => prevRooms.filter(room => room._id !== data.roomId));

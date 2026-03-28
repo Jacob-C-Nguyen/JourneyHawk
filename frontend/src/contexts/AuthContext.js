@@ -1,6 +1,3 @@
-// Req 2: Allows users to login with their account credentials
-// Req 3: Guides unregistered users through account creation
-// Req 21: Handles logout and clears user session on app exit
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { authAPI } from '../services/api';
@@ -25,7 +22,6 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  // Req 1: Auto-restores user session on app launch using stored JWT token
   const checkAuthStatus = async () => {
     try {
       const token = await SecureStore.getItemAsync('userToken');
@@ -43,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Req 3: Creates account and sets user session immediately on success
   const signup = async (userData) => {
     try {
       setError(null);
@@ -62,40 +57,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Req 3: Verifies OTP sent to email and logs user in after confirmation
-  const verifyEmail = async (email, otp) => {
-    try {
-      setError(null);
-      const response = await authAPI.verifyEmail(email, otp);
-
-      await SecureStore.setItemAsync('userToken', response.data.token);
-      const { token, ...userWithoutToken } = response.data;
-      setUser(userWithoutToken);
-      SocketService.connect(response.data.token);
-
-      return { success: true };
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Verification failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  // Req 2: Validates role selection (host vs attendee) and stores JWT token on success
   const login = async (credentials, expectedRole) => {
     try {
       setError(null);
       const response = await authAPI.login(credentials);
-
-      if (response.requiresVerification) {
-        return {
-          success: false,
-          requiresVerification: true,
-          userId: response.userId,
-          email: response.email,
-          error: response.message,
-        };
-      }
 
       if (expectedRole && response.data.role !== expectedRole) {
         const actualRole = response.data.role === 'host' ? 'Host / Chaperone' : 'Attendee';
@@ -117,7 +82,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Req 21: Disconnects socket and clears stored credentials on logout
   const logout = async () => {
     try {
       SocketService.disconnect();
@@ -134,7 +98,6 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     error,
     signup,
-    verifyEmail,
     login,
     logout,
     isAuthenticated: !!user,

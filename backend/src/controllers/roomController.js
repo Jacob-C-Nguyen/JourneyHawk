@@ -6,37 +6,33 @@ const generateRoomCode = require('../utils/generateRoomCode');
 // - Generates unique 8-character room code for attendees to join
 // Functional Req 18: The application should allow for the user to make an event
 // - Creates room with name, location, date/time, notes, and optional geofence
-// @desc    Create a new room
-// @route   POST /api/rooms/create
-// @access  Private (Host only)
 exports.createRoom = async (req, res) => {
   try {
     const { name, location, notes, startDate, endDate } = req.body;
 
     // Generate unique room code
+    // TODO: low-probability infinite loop if DB is nearly full of codes
     let roomCode = generateRoomCode();
     let codeExists = await Room.findOne({ roomCode });
 
-    // Keep generating until we get a unique code
     while (codeExists) {
       roomCode = generateRoomCode();
       codeExists = await Room.findOne({ roomCode });
     }
 
-    // Create room
     const room = await Room.create({
       roomCode,
       name,
       host: req.user._id,
-      attendees: [req.user._id], // Host is automatically added
+      attendees: [req.user._id],
       location,
       notes,
       startDate,
       endDate,
     });
 
-    // Populate host information
     await room.populate('host', 'username email');
+    await room.populate('attendees', 'username email phone role');
 
     res.status(201).json({
       success: true,
@@ -54,9 +50,6 @@ exports.createRoom = async (req, res) => {
 // - Validates room code and adds user to room attendee list
 // Functional Req 14: The application should allow hosts to join an existing room
 // - Hosts can join another host's room as chaperone via room code
-// @desc    Join a room with code
-// @route   POST /api/rooms/join
-// @access  Private
 exports.joinRoom = async (req, res) => {
   try {
     const { roomCode } = req.body;
@@ -70,7 +63,6 @@ exports.joinRoom = async (req, res) => {
       });
     }
 
-    // Check if user is already in the room
     if (room.attendees.includes(req.user._id)) {
       return res.status(400).json({
         success: false,
@@ -78,15 +70,12 @@ exports.joinRoom = async (req, res) => {
       });
     }
 
-    // Add user to room
     room.attendees.push(req.user._id);
     await room.save();
 
-    // Populate attendees
     await room.populate('attendees', 'username email role');
     await room.populate('host', 'username email');
 
-    // Emit socket event to room members
     const io = req.app.get('io');
     io.to(`room:${room._id}`).emit('user-joined', {
       roomId: room._id,
@@ -98,7 +87,6 @@ exports.joinRoom = async (req, res) => {
       },
       room,
     });
-
 
     res.status(200).json({
       success: true,
@@ -114,9 +102,6 @@ exports.joinRoom = async (req, res) => {
 
 // Functional Req 11: The application should allow the user to view an attendee's basic information
 // - Returns room with populated attendee details (username, email, phone, role)
-// @desc    Get room by ID
-// @route   GET /api/rooms/:id
-// @access  Private
 exports.getRoom = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
@@ -130,7 +115,6 @@ exports.getRoom = async (req, res) => {
       });
     }
 
-    // Check if user is in the room
     const isInRoom = room.attendees.some(
       attendee => attendee._id.toString() === req.user._id.toString()
     ) || room.host._id.toString() === req.user._id.toString();
@@ -156,9 +140,6 @@ exports.getRoom = async (req, res) => {
 
 // Functional Req 10: The application should allow user to switch over to the room screen
 // - Returns all rooms the user is in (as host or attendee)
-// @desc    Get all rooms for a user
-// @route   GET /api/rooms/user/me
-// @access  Private
 exports.getUserRooms = async (req, res) => {
   try {
     const rooms = await Room.find({
@@ -189,9 +170,6 @@ exports.getUserRooms = async (req, res) => {
 // - Attendee removes themselves from the room
 // - Deletes all location records for the user in this room
 // - Emits socket event so other users see them removed in real-time
-// @desc    Leave a room
-// @route   PUT /api/rooms/:id/leave
-// @access  Private
 exports.leaveRoom = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
@@ -203,7 +181,6 @@ exports.leaveRoom = async (req, res) => {
       });
     }
 
-    // Check if user is the host
     if (room.host.toString() === req.user._id.toString()) {
       return res.status(400).json({
         success: false,
@@ -211,27 +188,23 @@ exports.leaveRoom = async (req, res) => {
       });
     }
 
-    // Remove user from attendees
     room.attendees = room.attendees.filter(
       attendee => attendee.toString() !== req.user._id.toString()
     );
 
     await room.save();
 
-    // Delete all location records for this user in this room
     await Location.deleteMany({
       user: req.user._id,
       room: req.params.id
     });
 
-    // Emit socket event to room members
     const io = req.app.get('io');
     io.to(`room:${room._id}`).emit('user-left', {
       roomId: room._id,
       userId: req.user._id.toString(),
       username: req.user.username,
     });
-
 
     res.status(200).json({
       success: true,
@@ -246,9 +219,6 @@ exports.leaveRoom = async (req, res) => {
 };
 
 // Functional Req 12: The application should allow the host to remove individual attendees
-// @desc    Remove an attendee from a room
-// @route   DELETE /api/rooms/:id/attendees/:attendeeId
-// @access  Private (Host only)
 exports.removeAttendee = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
@@ -288,9 +258,7 @@ exports.removeAttendee = async (req, res) => {
 };
 
 // Functional Req 15: Invite attendee by phone number
-// @desc    Find user by phone and add them to the room
-// @route   POST /api/rooms/:id/invite
-// @access  Private (Host only)
+// - Find user by phone and add them to the room
 exports.inviteByPhone = async (req, res) => {
   try {
     const { phone } = req.body;
@@ -333,9 +301,6 @@ exports.inviteByPhone = async (req, res) => {
 // - Host deletes the entire room, removing all attendees
 // - Deletes all location records for the room
 // - Emits socket event to notify all attendees of room deletion
-// @desc    Delete a room
-// @route   DELETE /api/rooms/:id
-// @access  Private (Host only)
 exports.deleteRoom = async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
@@ -347,7 +312,6 @@ exports.deleteRoom = async (req, res) => {
       });
     }
 
-    // Check if user is the host
     if (room.host.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -363,11 +327,8 @@ exports.deleteRoom = async (req, res) => {
       deletedByUserId: req.user._id.toString(),
     });
 
-    // Delete all location records for this room
     await Location.deleteMany({ room: req.params.id });
-
     await room.deleteOne();
-
 
     res.status(200).json({
       success: true,

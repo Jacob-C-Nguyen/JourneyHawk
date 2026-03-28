@@ -1,7 +1,3 @@
-// Functional Req 3: Guides unregistered users to create a new account
-// - Collects username, email, phone, password, and confirm password
-// - Validates inputs (min lengths, email format, password match)
-// - Registers user with selected role (host/attendee) via backend API
 import React, { useState } from 'react';
 import {
   View,

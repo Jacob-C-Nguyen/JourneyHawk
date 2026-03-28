@@ -1,5 +1,3 @@
-// Req 6: Listens globally for new-notification socket events and shows in-app alert
-// Req 7: Alert includes a "View" button that navigates to the Notifications tab
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import SocketService from '../services/socket';
@@ -23,7 +21,6 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    // Req 6: Join personal notification channel once socket is ready
     const joinWithDelay = () => {
       const checkAndJoin = () => {
         if (SocketService.getStatus().isConnected) {
@@ -37,7 +34,6 @@ export const NotificationProvider = ({ children }) => {
 
     joinWithDelay();
 
-    // Req 6/7: Show alert popup when a notification arrives in real-time
     const handleNotification = (data) => {
       setUnreadCount(prev => prev + 1);
       Alert.alert(

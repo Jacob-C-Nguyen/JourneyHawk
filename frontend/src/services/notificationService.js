@@ -1,4 +1,3 @@
-// Req 6/7: Registers device for push notifications and manages notification listeners
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
@@ -6,7 +5,6 @@ import Constants from 'expo-constants';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
-// Req 6: Configure foreground notification display behavior
 if (!isExpoGo) {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -18,7 +16,6 @@ if (!isExpoGo) {
 }
 
 class NotificationService {
-  // Req 6: Registers device push token with backend so host can receive alerts
   async registerForPushNotifications() {
     if (isExpoGo) {
       return null;
@@ -60,7 +57,6 @@ class NotificationService {
     }
   }
 
-  // Req 6: Listens for notifications received while app is in the foreground
   addNotificationListener(callback) {
     if (isExpoGo) {
       return null;
@@ -74,7 +70,6 @@ class NotificationService {
     }
   }
 
-  // Req 6: Listens for user tapping on a notification
   addNotificationResponseListener(callback) {
     if (isExpoGo) {
       return null;
@@ -102,7 +97,6 @@ class NotificationService {
     }
   }
 
-  // Req 7: Schedules an immediate local notification for testing
   async scheduleLocalNotification(title, body, data = {}) {
     if (isExpoGo) {
       return;
