@@ -54,6 +54,7 @@ export default function RoomScreen({ navigation, route }) {
     }, [loadUserRooms])
   );
 
+  // Req 10/12: Host deletes room (Req 12) or attendee leaves (Req 10); refreshes room list after
   const handleLeaveRoom = async (room, isHost) => {
     if (!room) return;
 

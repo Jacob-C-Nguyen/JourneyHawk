@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Req 1: Auto-restores user session on app launch using stored JWT token
   const checkAuthStatus = async () => {
     try {
       const token = await SecureStore.getItemAsync('userToken');
@@ -61,6 +62,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Req 3: Verifies OTP sent to email and logs user in after confirmation
   const verifyEmail = async (email, otp) => {
     try {
       setError(null);

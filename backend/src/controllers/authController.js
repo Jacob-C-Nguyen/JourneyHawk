@@ -17,7 +17,8 @@ const isPhoneValid = (phone) => {
   return /^\d{7,15}$/.test(digits);
 };
 
-// @desc    Validate and send OTP — does NOT create user yet
+// Req 3: Creates account with username, email, phone, password, and role
+// @desc    Register a new user
 // @route   POST /api/auth/signup
 // @access  Public
 exports.signup = async (req, res) => {
@@ -58,6 +59,7 @@ exports.signup = async (req, res) => {
 };
 
 
+// Req 2: Validates credentials and returns JWT token with user role
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
@@ -100,6 +102,7 @@ exports.login = async (req, res) => {
   }
 };
 
+// Req 1: Returns current user data from stored JWT so app can auto-login on launch
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private

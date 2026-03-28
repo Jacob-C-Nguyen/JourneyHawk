@@ -42,6 +42,7 @@ export default function AccountScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Req 21: Prompts confirmation then calls logout to clear session
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -90,7 +91,7 @@ export default function AccountScreen() {
     calendarDays.push(day);
   }
 
-  // Navigate months
+  // Req 4: Navigate months on the calendar view
   const goToPreviousMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() - 1);

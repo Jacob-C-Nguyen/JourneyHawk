@@ -24,6 +24,7 @@ export default function JoinRoomScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const { setCurrentRoom, loadUserRooms } = useRoom();
 
+  // Req 13/14: Validates room code, joins the room, and sets it as the active room
   const handleJoinRoom = async () => {
     if (!roomCode || roomCode.length < 8) {
       Alert.alert('Error', 'Please enter a valid room code');

@@ -26,6 +26,7 @@ export default function AttendeeDetailScreen({ route, navigation }) {
 
   const isHost = user?.role === 'host' && activeRoom?.host?._id === user?._id;
 
+  // Req 12: Removes attendee from the room via API and navigates back on success
   const handleRemove = () => {
     Alert.alert(
       'Remove Attendee',

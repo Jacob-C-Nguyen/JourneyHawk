@@ -47,6 +47,7 @@ export default function MapRadarScreen() {
     };
   }, [activeRoom]);
 
+  // Req 8: Requests location permission and sets map region to current GPS position
   const initializeMap = async () => {
     try {
       setLoading(true);
@@ -133,10 +134,7 @@ export default function MapRadarScreen() {
     }
   };
 
-  // Filter locations based on user role (Proposal Section 4.1.10)
-  // Attendees can ONLY see hosts
-  // Hosts can see everyone
-  // IMPORTANT: Filter out current user (they're already shown by Google Maps)
+  // Req 9: Filters visible markers by role (attendees see hosts only) and search query
   const getVisibleLocations = () => {
     let filtered = [];
     
