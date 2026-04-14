@@ -8,6 +8,6 @@ const appJson = require('./app.json');
 export default {
   ...appJson.expo,
   extra: {
-    apiUrl: process.env.API_URL || 'enter your API URL in .env or as an environment variable',
+    apiUrl: process.env.API_URL || 'http://10.0.2.2:3000/api',
   },
 };
