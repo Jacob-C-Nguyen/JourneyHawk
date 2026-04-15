@@ -20,9 +20,6 @@
         "NSLocationAlwaysUsageDescription": "JourneyHawk needs your location to track your group even when the app is in the background.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "JourneyHawk needs your location to track your group for safety.",
         "UIBackgroundModes": ["location"]
-      },
-      "config": {
-        "googleMapsApiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
       }
     },
     "android": {
@@ -36,11 +33,6 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION"
       ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
-        }
-      },
       "edgeToEdgeEnabled": true
     },
     "web": {
