@@ -86,7 +86,7 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`JourneyHawk API running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
 });
 
