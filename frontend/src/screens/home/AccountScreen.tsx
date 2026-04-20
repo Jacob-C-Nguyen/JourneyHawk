@@ -1,3 +1,4 @@
+// src/screens/home/AccountScreen.tsx
 // Functional Req 4: Calendar expands to view upcoming events by month
 // Functional Req 5: Clicking an event shows full details (time, date, location)
 // Functional Req 18: Displays created events on the calendar
@@ -42,7 +43,6 @@ export default function AccountScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // Req 21: Prompts confirmation then calls logout to clear session
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -91,7 +91,7 @@ export default function AccountScreen() {
     calendarDays.push(day);
   }
 
-  // Req 4: Navigate months on the calendar view
+  // Navigate months
   const goToPreviousMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() - 1);
@@ -130,11 +130,12 @@ export default function AccountScreen() {
         <Text style={styles.date}>{dateString}</Text>
       </View>
 
+      {/* Calendar Section */}
       <View style={styles.calendarSection}>
         <Text style={styles.sectionTitle}>Calendar</Text>
         
         <View style={styles.calendarCard}>
-
+          {/* Month Navigation */}
           <View style={styles.monthNavigation}>
             <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
               <Text style={styles.navButtonText}>◀</Text>
@@ -145,6 +146,7 @@ export default function AccountScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Day Headers */}
           <View style={styles.dayHeaders}>
             {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
               <View key={index} style={styles.dayHeader}>
@@ -153,6 +155,7 @@ export default function AccountScreen() {
             ))}
           </View>
 
+          {/* Calendar Grid */}
           <View style={styles.calendarGrid}>
             {calendarDays.map((day, index) => {
               const isToday = day === today.getDate() && isCurrentMonth;
@@ -170,12 +173,14 @@ export default function AccountScreen() {
             })}
           </View>
 
+          {/* Time Display */}
           <View style={styles.timeDisplay}>
             <Text style={styles.timeText}>{timeString}</Text>
           </View>
         </View>
       </View>
 
+      {/* Upcoming Events Section */}
       <View style={styles.eventsSection}>
         <Text style={styles.sectionTitle}>Upcoming Events</Text>
         {rooms.length > 0 ? (
@@ -226,6 +231,7 @@ export default function AccountScreen() {
         )}
       </View>
 
+      {/* User Info Section */}
       <View style={styles.userInfoSection}>
         <Text style={styles.sectionTitle}>Account Information</Text>
         <View style={styles.infoRow}>
@@ -244,6 +250,7 @@ export default function AccountScreen() {
         </View>
       </View>
 
+      {/* Logout Button */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>

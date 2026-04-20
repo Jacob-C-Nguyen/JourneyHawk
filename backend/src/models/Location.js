@@ -1,3 +1,4 @@
+// src/models/Location.js
 // Functional Req 8 & 9: Location schema for real-time GPS tracking
 // - Stores lat/lng/accuracy from phone GPS sensor
 // - status: tracks attendee state (present, away-restroom, away-switching, away-other)

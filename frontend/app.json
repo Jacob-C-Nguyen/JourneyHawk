@@ -19,8 +19,14 @@
         "NSLocationWhenInUseUsageDescription": "JourneyHawk needs your location to keep you safe during trips.",
         "NSLocationAlwaysUsageDescription": "JourneyHawk needs your location to track your group even when the app is in the background.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "JourneyHawk needs your location to track your group for safety.",
+        "NSBluetoothAlwaysUsageDescription": "JourneyHawk uses Bluetooth to connect to nearby GPS devices.",
+        "NSBluetoothPeripheralUsageDescription": "JourneyHawk communicates with external Bluetooth devices.",
         "UIBackgroundModes": ["location"]
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
       }
+    
     },
     "android": {
       "adaptiveIcon": {
@@ -29,10 +35,20 @@
       },
       "package": "com.journeyhawk.app",
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
-      ],
+            "ACCESS_COARSE_LOCATION",
+            "ACCESS_FINE_LOCATION",
+            "ACCESS_BACKGROUND_LOCATION",
+            "BLUETOOTH",
+            "BLUETOOTH_ADMIN",
+            "BLUETOOTH_SCAN",
+            "BLUETOOTH_CONNECT",
+            "BLUETOOTH_ADVERTISE"
+          ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
+        }
+      },
       "edgeToEdgeEnabled": true
     },
     "web": {

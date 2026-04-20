@@ -1,3 +1,4 @@
+// src/controllers/notificationController.js
 const Notification = require('../models/Notification');
 const Room = require('../models/Room');
 
@@ -5,6 +6,9 @@ const Room = require('../models/Room');
 // - Retrieves all notifications for the logged-in user
 // - Sorted by most recent first
 // - Populates sender info and room details
+// @desc    Get all notifications for current user
+// @route   GET /api/notifications
+// @access  Private
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ to: req.user._id })
@@ -28,6 +32,9 @@ exports.getNotifications = async (req, res) => {
 // Functional Req 7: The application should allow users to send a new notification
 // - Sends a notification to a single user
 // - Delivers in real-time via Socket.io
+// @desc    Send notification to single user
+// @route   POST /api/notifications/send
+// @access  Private
 exports.sendNotification = async (req, res) => {
   try {
     const { toUserId, type, title, message, roomId } = req.body;
@@ -43,6 +50,7 @@ exports.sendNotification = async (req, res) => {
 
     await notification.populate('from', 'username email');
 
+    // Emit real-time notification via Socket.io
     const io = req.app.get('io');
     io.to(`notification:${toUserId}`).emit('new-notification', {
       notification: {
@@ -56,6 +64,8 @@ exports.sendNotification = async (req, res) => {
         createdAt: notification.createdAt,
       },
     });
+
+    console.log(`Notification sent to user: ${toUserId}`);
 
     res.status(201).json({
       success: true,
@@ -73,11 +83,14 @@ exports.sendNotification = async (req, res) => {
 // - Host sends notification to ALL attendees in a room at once
 // - Creates individual notification records per recipient
 // - Each delivered in real-time via Socket.io
-// TODO: switch to insertMany for bulk notifications instead of looping creates
+// @desc    Send notification to all room attendees
+// @route   POST /api/notifications/send-to-room
+// @access  Private (Host only)
 exports.sendNotificationToRoom = async (req, res) => {
   try {
     const { roomId, type, title, message } = req.body;
 
+    // Get room and verify user is host
     const room = await Room.findById(roomId).populate('attendees', '_id username email');
 
     if (!room) {
@@ -87,6 +100,7 @@ exports.sendNotificationToRoom = async (req, res) => {
       });
     }
 
+    // Verify user is host
     if (room.host.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -94,10 +108,12 @@ exports.sendNotificationToRoom = async (req, res) => {
       });
     }
 
+    // Get recipients (exclude sender)
     const recipients = room.attendees.filter(
       attendee => attendee._id.toString() !== req.user._id.toString()
     );
 
+    // Create notifications for all attendees
     const notifications = [];
     const io = req.app.get('io');
 
@@ -114,6 +130,7 @@ exports.sendNotificationToRoom = async (req, res) => {
       await notification.populate('from', 'username email');
       notifications.push(notification);
 
+      // Emit real-time notification via Socket.io (for in-app)
       io.to(`notification:${attendee._id}`).emit('new-notification', {
         notification: {
           _id: notification._id,
@@ -127,6 +144,8 @@ exports.sendNotificationToRoom = async (req, res) => {
         },
       });
     }
+
+    console.log(`Notification sent to ${notifications.length} attendees in room ${room.name}`);
 
     res.status(201).json({
       success: true,
@@ -144,6 +163,9 @@ exports.sendNotificationToRoom = async (req, res) => {
 
 // Functional Req 6: Notification management - mark as read
 // - Verifies notification belongs to the user before updating
+// @desc    Mark notification as read
+// @route   PUT /api/notifications/:id/read
+// @access  Private
 exports.markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -155,6 +177,7 @@ exports.markAsRead = async (req, res) => {
       });
     }
 
+    // Verify notification belongs to user
     if (notification.to.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -179,6 +202,9 @@ exports.markAsRead = async (req, res) => {
 
 // Functional Req 6: Notification management - delete notification
 // - Verifies notification belongs to the user before deleting
+// @desc    Delete a notification
+// @route   DELETE /api/notifications/:id
+// @access  Private
 exports.deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -190,6 +216,7 @@ exports.deleteNotification = async (req, res) => {
       });
     }
 
+    // Verify notification belongs to user
     if (notification.to.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,

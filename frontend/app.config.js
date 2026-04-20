@@ -1,29 +1,22 @@
-// app.config.js — replaces app.json, reads secrets from .env
+// app.config.js — replaces app.json, reads API_URL from .env
 // To use local backend:  API_URL=http://192.168.x.x:3000/api npx expo start
 // To use production:     API_URL=https://journeyhawk-production.up.railway.app/api npx expo start
 // Or set API_URL in a .env file at the project root
 
 const appJson = require('./app.json');
 
-const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY || '';
 
+//UPDATE the ip address inside the url with your LAN ip
+//can be found with ipconfig on windows (or search up how to do it if your machine is different)
 export default {
   ...appJson.expo,
-  ios: {
-    ...appJson.expo.ios,
-    config: {
-      googleMapsApiKey,
-    },
-  },
-  android: {
-    ...appJson.expo.android,
-    config: {
-      googleMaps: {
-        apiKey: googleMapsApiKey,
-      },
-    },
-  },
+
   extra: {
-    apiUrl: process.env.API_URL || 'http://10.0.2.2:3000/api',
+    ...(appJson.expo.extra || {}),
+    apiUrl: process.env.API_URL || 'http://192.168.86.55:3000/api',
+    eas: {
+      projectId: "a827226e-54cb-4693-bda5-dbaf38842f5b",
+    },
   },
 };
+

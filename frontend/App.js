@@ -1,4 +1,7 @@
-// App.js
+import 'react-native-get-random-values'; // sometimes needed for BLE libs
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { RoomProvider } from './src/contexts/RoomContext';

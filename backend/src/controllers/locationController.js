@@ -1,6 +1,6 @@
+// src/controllers/locationController.js
 const Location = require('../models/Location');
 const Room = require('../models/Room');
-const { calculateDistance } = require('../utils/geoUtils');
 
 // Functional Req 8: The application should be able to send the user to the map screen
 // - Stores GPS lat/lng/accuracy from phone sensor into database
@@ -8,6 +8,9 @@ const { calculateDistance } = require('../utils/geoUtils');
 // - Emits real-time Socket.io events so map updates instantly
 // - Tracks attendee status (present, away-restroom, away-switching, away-other)
 // - Sends notifications to host on status change or geofence exit/enter
+// @desc    Update user location
+// @route   POST /api/location/update
+// @access  Private
 exports.updateLocation = async (req, res) => {
   try {
     const { roomId, latitude, longitude, accuracy, status, statusReason } = req.body;
@@ -42,6 +45,7 @@ exports.updateLocation = async (req, res) => {
     // Check geofence - distance from HOST's current location
     let isOutsideGeofence = false;
     if (room.geofence && room.geofence.radius) {
+      // Get host's latest location
       const hostLocation = await Location.findOne({
         user: room.host,
         room: roomId,
@@ -55,6 +59,10 @@ exports.updateLocation = async (req, res) => {
           hostLocation.longitude
         );
         isOutsideGeofence = distance > (room.geofence.radius || 100);
+        
+        if (isOutsideGeofence) {
+          console.log(`${req.user.username} is ${distance.toFixed(0)}m from host (limit: ${room.geofence.radius}m)`);
+        }
       }
     }
 
@@ -107,9 +115,12 @@ exports.updateLocation = async (req, res) => {
         type: 'status-change',
       });
 
+      // Emit notification to host
       io.to(`notification:${room.host.toString()}`).emit('new-notification', {
         notification,
       });
+      
+      console.log(`Notification sent to host ${room.host.toString()}: ${notification.title}`);
     }
 
     // Notify host of geofence violation
@@ -126,6 +137,8 @@ exports.updateLocation = async (req, res) => {
       io.to(`notification:${room.host.toString()}`).emit('new-notification', {
         notification,
       });
+      
+      console.log(`Geofence exit notification sent to host: ${req.user.username}`);
     }
 
     // Notify host when attendee re-enters geofence
@@ -142,7 +155,11 @@ exports.updateLocation = async (req, res) => {
       io.to(`notification:${room.host.toString()}`).emit('new-notification', {
         notification,
       });
+      
+      console.log(`Geofence return notification sent to host: ${req.user.username}`);
     }
+
+    console.log(`Location updated for user ${req.user.username}: (${latitude}, ${longitude}) - Status: ${status || 'present'}`);
 
     res.status(200).json({
       success: true,
@@ -157,14 +174,34 @@ exports.updateLocation = async (req, res) => {
   }
 };
 
+// Helper function to calculate distance between two points (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Earth radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in meters
+}
+
 // Functional Req 9: The application should allow to find an individual attendee
 // - Returns latest GPS location for every user in the room
 // - Aggregates by user to get most recent position only
 // - Includes username, email, phone, role for search bar filtering
+// @desc    Get all locations for a room
+// @route   GET /api/location/room/:roomId
+// @access  Private
 exports.getRoomLocations = async (req, res) => {
   try {
     const { roomId } = req.params;
 
+    // Verify user is in the room
     const room = await Room.findById(roomId).populate('attendees', 'username email role phone');
 
     if (!room) {
@@ -200,9 +237,10 @@ exports.getRoomLocations = async (req, res) => {
       }
     ]);
 
+    // Populate user information
     await Location.populate(locations, { path: 'user', select: 'username email role phone' });
 
-    // TODO: consider caching this - it gets called on every map re-render
+    // Transform data to match frontend expectations
     const transformedLocations = locations.map(loc => ({
       userId: loc.user._id,
       username: loc.user.username,
@@ -217,6 +255,8 @@ exports.getRoomLocations = async (req, res) => {
       isOutsideGeofence: loc.isOutsideGeofence || false,
       timestamp: loc.timestamp,
     }));
+
+    console.log(`Sending ${transformedLocations.length} locations for room ${roomId}`);
 
     res.status(200).json({
       success: true,

@@ -1,3 +1,4 @@
+// src/screens/room/JoinRoomScreen.js
 // Functional Req 13: Attendees can join a room by entering the correct room code
 // Functional Req 14: Hosts can join another host's room as chaperone
 // - Simple form with 8-character room code input
@@ -24,7 +25,6 @@ export default function JoinRoomScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const { setCurrentRoom, loadUserRooms } = useRoom();
 
-  // Req 13/14: Validates room code, joins the room, and sets it as the active room
   const handleJoinRoom = async () => {
     if (!roomCode || roomCode.length < 8) {
       Alert.alert('Error', 'Please enter a valid room code');
@@ -76,13 +76,10 @@ export default function JoinRoomScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Enter Room Code"
-          placeholderTextColor="#64748B"
           value={roomCode}
           onChangeText={(text) => setRoomCode(text.toUpperCase())}
           autoCapitalize="characters"
           maxLength={8}
-          multiline={true}
-          submitBehavior='blurAndSubmit'
         />
 
         <Text style={styles.hint}>Room code is 8 characters (e.g., A3F9B2C1)</Text>

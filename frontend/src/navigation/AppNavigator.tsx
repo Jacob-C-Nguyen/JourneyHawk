@@ -1,3 +1,4 @@
+// src/navigation/AppNavigator.tsx
 // Functional Req 1: App opens from icon and brings user to login screen
 // Functional Req 2: Allows users to login with credentials
 // Functional Req 3: Guides unregistered users to create a new account
@@ -12,12 +13,14 @@ import { navigationRef } from './navigationRef';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
+import VerifyOTPScreen from '../screens/auth/VerifyOTPScreen';
 import TabNavigator from './TabNavigator';
 
 type RootStackParamList = {
   RoleSelection: undefined;
   Login: { role: string };
   SignUp: { role: string };
+  VerifyOTP: { email: string };
   MainApp: undefined;
 };
 
@@ -34,6 +37,7 @@ function RoleSelectionScreen({ navigation }: RoleSelectionProps) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
+      {/* Header background wraps brand content */}
       <View style={styles.headerBackground}>
         <View style={styles.brandContainer}>
           <View style={styles.logoCircle}>
@@ -44,6 +48,7 @@ function RoleSelectionScreen({ navigation }: RoleSelectionProps) {
         </View>
       </View>
 
+      {/* Role selection */}
       <View style={styles.cardContainer}>
         <Text style={styles.selectText}>I am a...</Text>
 
@@ -78,6 +83,7 @@ function RoleSelectionScreen({ navigation }: RoleSelectionProps) {
         </TouchableOpacity>
       </View>
 
+      {/* Footer */}
       <Text style={styles.footer}>CSUF · CPSC 491</Text>
     </View>
   );
@@ -215,8 +221,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator
-        id="root"
+      <Stack.Navigator 
         initialRouteName={isAuthenticated ? 'MainApp' : 'RoleSelection'}
         screenOptions={{
           headerShown: false,
@@ -227,6 +232,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
           </>
         ) : (
           <Stack.Screen name="MainApp" component={TabNavigator} />

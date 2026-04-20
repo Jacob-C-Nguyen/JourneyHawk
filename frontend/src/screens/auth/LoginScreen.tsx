@@ -1,3 +1,8 @@
+// src/screens/auth/LoginScreen.tsx
+// Functional Req 2: Allows users to successfully login with their account
+// - Provides input fields for email/username and password
+// - Validates role selection (host vs attendee) against stored account role
+// - Authenticates via JWT token from backend
 import React, { useState } from 'react';
 import {
   View,
@@ -59,6 +64,7 @@ export default function LoginScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
+        {/* Header background wraps back button + header */}
         <View style={styles.headerBackground}>
           <TouchableOpacity
             style={styles.backButton}
@@ -76,6 +82,7 @@ export default function LoginScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        {/* Form */}
         <View style={styles.formContainer}>
           <Text style={styles.inputLabel}>Email or Username</Text>
           <View style={styles.inputWrapper}>
@@ -123,6 +130,7 @@ export default function LoginScreen({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
 
+        {/* Footer links */}
         <View style={styles.footerContainer}>
           <TouchableOpacity
             onPress={() => navigation.navigate('SignUp', { role })}

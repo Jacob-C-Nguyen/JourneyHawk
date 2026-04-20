@@ -1,3 +1,4 @@
+// src/screens/home/EventDetailScreen.tsx
 // Functional Req 5: The application should allow users to click on an event to see full details
 // - Shows room name, date/time, location, notes, room code, attendee count
 // - Navigated to from AccountScreen calendar event cards
@@ -42,6 +43,7 @@ export default function EventDetailScreen({ route, navigation }) {
         <Text style={styles.title}>Event Detail</Text>
       </View>
 
+      {/* Event name + badge */}
       <View style={styles.heroSection}>
         <Text style={styles.eventName}>{room.name}</Text>
         <View style={[styles.badge, isHost && styles.hostBadge]}>
@@ -50,6 +52,7 @@ export default function EventDetailScreen({ route, navigation }) {
       </View>
 
       <View style={styles.cardsSection}>
+        {/* Date & Time */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Date</Text>
           <Text style={styles.cardValue}>{formatDate(room.startDate)}</Text>
@@ -67,17 +70,20 @@ export default function EventDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Location */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Location</Text>
           <Text style={styles.cardValue}>{room.location || '\u2014'}</Text>
         </View>
 
+        {/* Room Code */}
         <View style={[styles.card, styles.codeCard]}>
           <Text style={styles.cardLabel}>Room Code</Text>
           <Text style={styles.roomCode}>{room.roomCode}</Text>
           <Text style={styles.codeHint}>Share this with attendees to join</Text>
         </View>
 
+        {/* Attendees */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Attendees</Text>
           <Text style={styles.cardValue}>
@@ -85,6 +91,7 @@ export default function EventDetailScreen({ route, navigation }) {
           </Text>
         </View>
 
+        {/* Notes */}
         {room.notes ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Notes</Text>
@@ -92,6 +99,7 @@ export default function EventDetailScreen({ route, navigation }) {
           </View>
         ) : null}
 
+        {/* Geofence */}
         {room.geofence?.radius ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Safety Zone</Text>

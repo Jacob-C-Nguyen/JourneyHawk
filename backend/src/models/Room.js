@@ -1,3 +1,4 @@
+// src/models/Room.js
 // Functional Req 10-15, 18, 20: Room schema for group management
 // - roomCode: unique 8-char code for attendees to join (Req 13, 15)
 // - host: references User who created the room (Req 12)

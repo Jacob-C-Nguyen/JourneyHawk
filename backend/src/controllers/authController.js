@@ -1,19 +1,35 @@
+const dns = require('dns').promises;
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
-const isEmailValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const Counter = require('../models/Counter');
+
+const isEmailDomainValid = async (email) => {
+  const domain = email.split('@')[1];
+  try {
+    const records = await dns.resolveMx(domain);
+    return records && records.length > 0;
+  } catch {
+    return false;
+  }
+};
 
 const isPhoneValid = (phone) => {
   const digits = phone.replace(/[\s\-().+]/g, '');
   return /^\d{7,15}$/.test(digits);
 };
 
-// Req 3: Creates account with username, email, phone, password, and role
+
+// @desc    Validate and send OTP — does NOT create user yet
+// @route   POST /api/auth/signup
+// @access  Public
+
 exports.signup = async (req, res) => {
   try {
     const { username, email, password, phone, role } = req.body;
 
-    if (!isEmailValid(email)) {
+    const domainValid = await isEmailDomainValid(email);
+    if (!domainValid) {
       return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
     }
 
@@ -25,8 +41,17 @@ exports.signup = async (req, res) => {
     if (userExists) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists' });
     }
-
-    const user = await User.create({ username, email, password, phone, role: role || 'attendee' });
+      
+      
+      const user = await User.create({
+        username,
+        email,
+        password,
+        phone,
+        role: role || 'attendee'
+      });
+      
+      
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -41,13 +66,14 @@ exports.signup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ success: false, message: 'Something went wrong' });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 
-// Req 2: Validates credentials and returns JWT token with user role
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
 exports.login = async (req, res) => {
   try {
     const { emailOrUsername, password } = req.body;
@@ -56,7 +82,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email/username and password' });
     }
 
-    // TODO: add rate limiting here - brute force is an obvious attack vector
     const user = await User.findOne({
       $or: [{ email: emailOrUsername }, { username: emailOrUsername }],
     }).select('+password');
@@ -88,7 +113,9 @@ exports.login = async (req, res) => {
   }
 };
 
-// Req 1: Returns current user data from stored JWT so app can auto-login on launch
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);

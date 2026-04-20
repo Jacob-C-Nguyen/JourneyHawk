@@ -1,3 +1,4 @@
+// src/utils/generateRoomCode.js
 const crypto = require('crypto');
 
 const generateRoomCode = () => {

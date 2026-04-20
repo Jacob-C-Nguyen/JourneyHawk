@@ -1,3 +1,8 @@
+// src/screens/auth/SignUpScreen.tsx
+// Functional Req 3: Guides unregistered users to create a new account
+// - Collects username, email, phone, password, and confirm password
+// - Validates inputs (min lengths, email format, password match)
+// - Registers user with selected role (host/attendee) via backend API
 import React, { useState } from 'react';
 import {
   View,
@@ -90,6 +95,7 @@ export default function SignUpScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
+        {/* Header background wraps back button + header */}
         <View style={styles.headerBackground}>
           <TouchableOpacity
             style={styles.backButton}
@@ -107,6 +113,7 @@ export default function SignUpScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        {/* Form */}
         <View style={styles.formContainer}>
           <Text style={styles.inputLabel}>Username</Text>
           <View style={styles.inputWrapper}>
@@ -199,6 +206,7 @@ export default function SignUpScreen({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
 
+        {/* Footer links */}
         <View style={styles.footerContainer}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Login', { role })}
