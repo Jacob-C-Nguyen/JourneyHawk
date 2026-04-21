@@ -15,7 +15,6 @@ import * as Location from 'expo-location';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom } from '../../contexts/RoomContext';
 import { locationAPI } from '../../services/api';
-import LocationService from '../../services/location';
 import SocketService from '../../services/socket';
 import BLEService from '../../services/bleService';
 
@@ -26,8 +25,8 @@ export default function MapRadarScreen() {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [attendeeLocations, setAttendeeLocations] = useState([]);
-  const [picoLocations, setPicoLocations] = useState([]);
+  const [attendeeLocations, setAttendeeLocations] = useState<any[]>([]);
+  const [picoLocations, setPicoLocations] = useState<{ nodeId: any; userId: any; latitude: number; longitude: number }[]>([]);
   const [geofenceRadius, setGeofenceRadius] = useState(200);
   const [bleStatus, setBleStatus] = useState('Idle');
   const [selectedId, setSelectedId] = useState(null);
@@ -36,13 +35,13 @@ export default function MapRadarScreen() {
   const locationUpdateHandlerRef = useRef(null);
   const userLeftHandlerRef = useRef(null);
   const appState = useRef(AppState.currentState);
-  const locationSubscription = useRef(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const alertedIds = useRef(new Set());
 
   const isHost = user?.role === 'host';
   const MARKER_SIZE = 20;
 
-  const roomUsers = {};
+  const roomUsers: Record<string, string> = {};
   if (activeRoom?.attendees) {
     activeRoom.attendees.forEach((a) => {
       roomUsers[String(a.user_id)] = a.username;
@@ -98,7 +97,7 @@ export default function MapRadarScreen() {
     return () => subscription.remove();
   }, [activeRoom]);
 
-  const handleBLEData = (data) => {
+  const handleBLEData = (data: any) => {
     setBleStatus('Receiving');
 
     setPicoLocations((prev) => {
