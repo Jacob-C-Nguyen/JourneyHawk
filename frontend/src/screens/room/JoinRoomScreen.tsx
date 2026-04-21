@@ -81,8 +81,6 @@ export default function JoinRoomScreen({ navigation }) {
           onChangeText={(text) => setRoomCode(text.toUpperCase())}
           autoCapitalize="characters"
           maxLength={8}
-          multiline={true}
-          submitBehavior='blurAndSubmit'
         />
 
         <Text style={styles.hint}>Room code is 8 characters (e.g., A3F9B2C1)</Text>

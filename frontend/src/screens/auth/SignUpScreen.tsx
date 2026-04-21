@@ -17,7 +17,6 @@ import { useAuth } from '../../contexts/AuthContext';
 type RootStackParamList = {
   SignUp: { role: string };
   Login: { role: string };
-  VerifyOTP: { email: string };
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
@@ -258,10 +257,6 @@ const styles = StyleSheet.create({
   roleChipHost: {
     borderColor: '#3B82F6',
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
-  },
-  roleChipEmoji: {
-    fontSize: 16,
-    marginRight: 8,
   },
   roleChipText: {
     color: '#E2E8F0',

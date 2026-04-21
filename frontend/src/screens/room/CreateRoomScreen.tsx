@@ -26,10 +26,6 @@ export default function CreateRoomScreen() {
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   
-  // Geofence state - just radius, center follows host
-  const [geofenceEnabled, setGeofenceEnabled] = useState(false);
-  const [geofenceRadius, setGeofenceRadius] = useState('100'); // Default 100 meters
-  
   // Date/Time states
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 3600000)); // 1 hour later
@@ -76,13 +72,6 @@ export default function CreateRoomScreen() {
         startDate: startDate.toISOString(),
         endDate: hasEndDate ? endDate.toISOString() : undefined,
       };
-
-      // Add geofence if enabled
-      if (geofenceEnabled) {
-        roomData.geofence = {
-          radius: parseInt(geofenceRadius) || 100,
-        };
-      }
 
       const response = await roomAPI.create(roomData);
 
@@ -269,37 +258,6 @@ export default function CreateRoomScreen() {
           textAlignVertical="top"
         />
 
-        <Text style={[styles.label, { marginTop: 25 }]}>Safety Zone (Optional)</Text>
-        <Text style={styles.helperText}>
-          Get alerts when attendees stray too far from you during the event
-        </Text>
-
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setGeofenceEnabled(!geofenceEnabled)}
-        >
-          <View style={styles.checkbox}>
-            {geofenceEnabled && <View style={styles.checkboxChecked} />}
-          </View>
-          <Text style={styles.checkboxLabel}>Enable proximity alerts</Text>
-        </TouchableOpacity>
-
-        {geofenceEnabled && (
-          <View style={styles.radiusContainer}>
-            <Text style={styles.label}>Alert Distance (meters)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="100"
-              value={geofenceRadius}
-              onChangeText={setGeofenceRadius}
-              keyboardType="numeric"
-            />
-            <Text style={styles.helperText}>
-              You'll be alerted if attendees go beyond {geofenceRadius || '100'}m from you
-            </Text>
-          </View>
-        )}
-
         <TouchableOpacity
           style={[styles.createButton, loading && styles.buttonDisabled]}
           onPress={handleCreateRoom}
@@ -410,9 +368,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 5,
     marginBottom: 10,
-  },
-  radiusContainer: {
-    marginTop: 15,
   },
   createButton: {
     backgroundColor: '#3B82F6',

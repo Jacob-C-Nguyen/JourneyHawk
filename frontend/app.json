@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,6 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.journeyhawk.app",
       "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking.",
+        "NSBluetoothPeripheralUsageDescription": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking.",
         "NSLocationWhenInUseUsageDescription": "JourneyHawk needs your location to keep you safe during trips.",
         "NSLocationAlwaysUsageDescription": "JourneyHawk needs your location to track your group even when the app is in the background.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "JourneyHawk needs your location to track your group for safety.",
@@ -31,7 +33,12 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_ADVERTISE"
       ],
       "edgeToEdgeEnabled": true
     },
@@ -40,6 +47,14 @@
     },
     "plugins": [
       "expo-secure-store",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": ["peripheral", "central"],
+          "bluetoothAlwaysPermission": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking."
+        }
+      ],
       "@react-native-community/datetimepicker",
       [
         "expo-location",

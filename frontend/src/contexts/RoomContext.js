@@ -41,6 +41,12 @@ export const RoomProvider = ({ children }) => {
   }, [currentUserId]);
 
   useEffect(() => {
+    if (!currentUserId) return;
+    const interval = setInterval(() => loadUserRooms(), 15000);
+    return () => clearInterval(interval);
+  }, [currentUserId, loadUserRooms]);
+
+  useEffect(() => {
     if (activeRoom && !isTracking) {
       startTracking();
       SocketService.joinRoom(activeRoom._id);

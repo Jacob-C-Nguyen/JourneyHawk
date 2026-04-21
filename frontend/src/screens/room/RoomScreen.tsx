@@ -21,14 +21,8 @@ import StatusSelector from '../../components/StatusSelector';
 export default function RoomScreen({ navigation, route }) {
   const { user } = useAuth();
   const { activeRoom, rooms, isTracking, isLoading, loadUserRooms, clearCurrentRoom, setCurrentRoom } = useRoom();
-  const [localRoom, setLocalRoom] = useState(activeRoom);
   const [userStatus, setUserStatus] = useState('present');
   const [attendeeModalRoom, setAttendeeModalRoom] = useState(null);
-
-  // Sync localRoom with activeRoom
-  useEffect(() => {
-    setLocalRoom(activeRoom);
-  }, [activeRoom]);
 
   // Sync open attendee modal with live rooms data (handles joins, leaves, removals)
   useEffect(() => {
@@ -711,107 +705,10 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#3B82F6',
   },
-  roomName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  roomCode: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  trackingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    alignSelf: 'flex-start',
-  },
-  trackingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#34c759',
-    marginRight: 8,
-  },
-  trackingText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  section: {
-    flex: 1,
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#E2E8F0',
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  attendeeCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  attendeeEmail: {
-    fontSize: 14,
-    color: '#94A3B8',
-  },
-  attendeeRole: {
-    fontSize: 12,
-    color: '#3B82F6',
-    marginTop: 4,
-    fontWeight: '600',
-  },
   emptyText: {
     textAlign: 'center',
     color: '#64748B',
     marginTop: 20,
-  },
-  leaveButton: {
-    backgroundColor: '#ff3b30',
-    padding: 15,
-    margin: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  deleteButton: {
-    backgroundColor: '#ff3b30',
-  },
-  leaveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   noRoomContainer: {
     flex: 1,

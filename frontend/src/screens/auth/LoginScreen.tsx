@@ -183,10 +183,6 @@ const styles = StyleSheet.create({
     borderColor: '#3B82F6',
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
   },
-  roleChipEmoji: {
-    fontSize: 16,
-    marginRight: 8,
-  },
   roleChipText: {
     color: '#E2E8F0',
     fontSize: 13,

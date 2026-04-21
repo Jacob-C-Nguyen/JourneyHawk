@@ -1,0 +1,4 @@
+{
+    "user_id" : (INTEGER HERE),              //(MUST BE AN INTEGER)
+    "room_id" : " (8 DIGIT ROOM CODE HERE (with quotes)) ",     //(MUST BE A VALID EXISTING ROOM CODE)
+}
