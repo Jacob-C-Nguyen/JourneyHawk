@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,12 +22,16 @@ import BLEService from '../../services/bleService';
 export default function MapRadarScreen() {
   const { user } = useAuth();
   const { activeRoom, clearCurrentRoom } = useRoom();
+
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [attendeeLocations, setAttendeeLocations] = useState([]);
   const [picoLocations, setPicoLocations] = useState([]);
   const [geofenceRadius, setGeofenceRadius] = useState(200);
+  const [bleStatus, setBleStatus] = useState('Idle');
+  const [selectedId, setSelectedId] = useState(null);
+
   const mapRef = useRef(null);
   const locationUpdateHandlerRef = useRef(null);
   const userLeftHandlerRef = useRef(null);
@@ -35,8 +39,18 @@ export default function MapRadarScreen() {
   const locationSubscription = useRef(null);
   const alertedIds = useRef(new Set());
 
-  // Check if current user is a host
   const isHost = user?.role === 'host';
+  const MARKER_SIZE = 20;
+
+  const roomUsers = {};
+  if (activeRoom?.attendees) {
+    activeRoom.attendees.forEach((a) => {
+      roomUsers[String(a.user_id)] = a.username;
+    });
+  }
+  if (activeRoom?.host) {
+    roomUsers[String(activeRoom.host.user_id)] = activeRoom.host.username;
+  }
 
   useEffect(() => {
     if (activeRoom) {
@@ -55,8 +69,13 @@ export default function MapRadarScreen() {
 
   useEffect(() => {
     if (!activeRoom) return;
+
+    setBleStatus('Scanning');
     BLEService.scan(handleBLEData, activeRoom.roomCode);
-    return () => { BLEService.stop(); };
+
+    return () => {
+      BLEService.stop();
+    };
   }, [activeRoom]);
 
   useEffect(() => {
@@ -64,46 +83,40 @@ export default function MapRadarScreen() {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
         if (activeRoom) {
           BLEService.stop();
+          setBleStatus('Scanning');
           BLEService.scan(handleBLEData, activeRoom.roomCode);
         }
       }
-      if (nextState === 'background') BLEService.stop();
+
+      if (nextState === 'background') {
+        BLEService.stop();
+      }
+
       appState.current = nextState;
     });
+
     return () => subscription.remove();
   }, [activeRoom]);
 
-  useEffect(() => {
-    if (!isHost || !location) return;
-    const allLocations = [
-      ...attendeeLocations.filter(a => a.userId !== user._id),
-      ...picoLocations.map(p => ({
-        userId: p.nodeId,
-        latitude: Number(p.latitude),
-        longitude: Number(p.longitude),
-        username: `Pico ${p.userId ?? p.nodeId}`,
-      })),
-    ];
-    allLocations.forEach(person => {
-      const outside = getDistanceMeters(location.latitude, location.longitude, person.latitude, person.longitude) > geofenceRadius;
-      if (outside && !alertedIds.current.has(person.userId)) {
-        alertedIds.current.add(person.userId);
-        Alert.alert('Geofence Alert', `${person.username} has left the boundary.`);
-      } else if (!outside) {
-        alertedIds.current.delete(person.userId);
-      }
-    });
-  }, [picoLocations, attendeeLocations, location, geofenceRadius]);
-
   const handleBLEData = (data) => {
+    setBleStatus('Receiving');
+
     setPicoLocations((prev) => {
-      const index = prev.findIndex(p => p.nodeId === data.nodeId);
-      const updated = { nodeId: data.nodeId, userId: data.userId, latitude: data.latitude, longitude: data.longitude };
+      const index = prev.findIndex((p) => p.nodeId === data.nodeId);
+
+      const updated = {
+        nodeId: data.nodeId,
+        userId: data.userId,
+        latitude: Number(data.latitude),
+        longitude: Number(data.longitude),
+      };
+
       if (index !== -1) {
         const copy = [...prev];
         copy[index] = updated;
         return copy;
       }
+
       return [...prev, updated];
     });
   };
@@ -114,17 +127,21 @@ export default function MapRadarScreen() {
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
       Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) ** 2;
+      Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // Req 8: Requests location permission and sets map region to current GPS position
+  const checkOutside = (lat, lon) => {
+    if (!location) return false;
+    return getDistanceMeters(location.latitude, location.longitude, lat, lon) > geofenceRadius;
+  };
+
   const initializeMap = async () => {
     try {
       setLoading(true);
 
-      // Get current location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
@@ -151,11 +168,15 @@ export default function MapRadarScreen() {
       locationSubscription.current = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: 3000, distanceInterval: 2 },
         (pos) => {
-          setLocation(prev => prev ? {
-            ...prev,
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          } : prev);
+          setLocation((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                }
+              : prev
+          );
         }
       );
     } catch (error) {
@@ -166,20 +187,18 @@ export default function MapRadarScreen() {
   };
 
   const startFetchingLocations = () => {
-    // Fetch initial locations
     fetchAttendeeLocations();
 
-    // Store handler references so we can remove only these specific listeners later
     locationUpdateHandlerRef.current = (locationData) => {
-      setAttendeeLocations(prevLocations => {
-        const filtered = prevLocations.filter(loc => loc.userId !== locationData.userId);
+      setAttendeeLocations((prevLocations) => {
+        const filtered = prevLocations.filter((loc) => loc.userId !== locationData.userId);
         return [...filtered, locationData];
       });
     };
 
     userLeftHandlerRef.current = (data) => {
-      setAttendeeLocations(prevLocations =>
-        prevLocations.filter(loc => loc.userId !== data.userId)
+      setAttendeeLocations((prevLocations) =>
+        prevLocations.filter((loc) => loc.userId !== data.userId)
       );
     };
 
@@ -202,7 +221,6 @@ export default function MapRadarScreen() {
         setAttendeeLocations(response.data);
       }
     } catch (error) {
-      // Check if room was deleted (404 error)
       if (error.response?.status === 404) {
         stopFetchingLocations();
 
@@ -217,39 +235,75 @@ export default function MapRadarScreen() {
     }
   };
 
-  // Req 9: Filters visible markers by role (attendees see hosts only) and search query
-  const getVisibleLocations = () => {
+  const getVisibleUserLocations = () => {
     let filtered = [];
 
     if (isHost) {
-      // Hosts see everyone (all attendees and other hosts)
       filtered = attendeeLocations;
     } else {
-      // Attendees ONLY see hosts (not other attendees)
       filtered = attendeeLocations.filter((attendee) => attendee.role === 'host');
     }
 
-    // Remove current user from the list (Google Maps already shows them)
     filtered = filtered.filter((attendee) => attendee.userId !== user._id);
 
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter((attendee) =>
-        attendee.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        attendee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        attendee.phone?.includes(searchQuery)
-      );
-    }
-
-    return filtered;
+    return filtered.map((attendee) => ({
+      ...attendee,
+      sourceType: 'user',
+      userId: String(attendee.userId),
+      latitude: Number(attendee.latitude),
+      longitude: Number(attendee.longitude),
+      isOutsideGeofence: checkOutside(Number(attendee.latitude), Number(attendee.longitude)),
+    }));
   };
 
-  const visibleLocations = getVisibleLocations();
+  const visibleUserLocations = getVisibleUserLocations();
 
-  // Helper to get status emoji
+  const picoMergedLocations = picoLocations.map((p) => ({
+    userId: `pico-${p.nodeId}`,
+    nodeId: p.nodeId,
+    linkedUserId: p.userId,
+    latitude: Number(p.latitude),
+    longitude: Number(p.longitude),
+    username: roomUsers[String(p.userId)] ?? `Pico ${p.userId ?? p.nodeId}`,
+    email: '',
+    phone: '',
+    role: 'pico',
+    status: 'present',
+    sourceType: 'pico',
+    isOutsideGeofence: checkOutside(Number(p.latitude), Number(p.longitude)),
+  }));
+
+  const combinedLocations = [...visibleUserLocations, ...picoMergedLocations];
+
+  const filteredLocations = searchQuery
+    ? combinedLocations.filter(
+        (person) =>
+          person.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          person.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          person.phone?.includes(searchQuery)
+      )
+    : combinedLocations;
+
+  useEffect(() => {
+    if (!isHost || !location) return;
+
+    combinedLocations.forEach((person) => {
+      const outside =
+        getDistanceMeters(location.latitude, location.longitude, person.latitude, person.longitude) >
+        geofenceRadius;
+
+      if (outside && !alertedIds.current.has(person.userId)) {
+        alertedIds.current.add(person.userId);
+        Alert.alert('Geofence Alert', `${person.username} has left the boundary.`);
+      } else if (!outside) {
+        alertedIds.current.delete(person.userId);
+      }
+    });
+  }, [combinedLocations, location, geofenceRadius, isHost]);
+
   const getStatusEmoji = (status) => {
     const statusMap = {
-      'present': '',
+      present: '',
       'away-restroom': '(Restroom)',
       'away-switching': '(Switching)',
       'away-other': '(Away)',
@@ -257,10 +311,9 @@ export default function MapRadarScreen() {
     return statusMap[status] ?? '';
   };
 
-  // Helper to get status label
   const getStatusLabel = (status) => {
     const statusMap = {
-      'present': 'Present',
+      present: 'Present',
       'away-restroom': 'Away (Restroom)',
       'away-switching': 'Away (Switching Groups)',
       'away-other': 'Away',
@@ -268,10 +321,9 @@ export default function MapRadarScreen() {
     return statusMap[status] || 'Present';
   };
 
-  // Check if room has started (if it has a start date)
   const hasRoomStarted = () => {
     if (!activeRoom?.startDate) {
-      return true; // No start date means room is always active
+      return true;
     }
     const startDate = new Date(activeRoom.startDate);
     const now = new Date();
@@ -280,7 +332,6 @@ export default function MapRadarScreen() {
 
   const roomHasStarted = hasRoomStarted();
 
-  // Calculate time until start
   const getTimeUntilStart = () => {
     if (!activeRoom?.startDate) return null;
     const startDate = new Date(activeRoom.startDate);
@@ -302,43 +353,51 @@ export default function MapRadarScreen() {
     }
   };
 
-  // Zoom to searched person(s) when search query changes
   useEffect(() => {
     if (!mapRef.current) return;
 
-    if (searchQuery && visibleLocations.length > 0) {
-      if (visibleLocations.length === 1) {
-        // If search results in exactly 1 person, zoom to them
-        const person = visibleLocations[0];
-        mapRef.current.animateToRegion({
-          latitude: person.latitude,
-          longitude: person.longitude,
-          latitudeDelta: 0.005, // Zoomed in view
-          longitudeDelta: 0.005,
-        }, 1000); // 1 second animation
+    if (searchQuery && filteredLocations.length > 0) {
+      if (filteredLocations.length === 1) {
+        const person = filteredLocations[0];
+        setSelectedId(person.userId);
+
+        mapRef.current.animateToRegion(
+          {
+            latitude: person.latitude,
+            longitude: person.longitude,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          },
+          1000
+        );
       } else {
-        // If multiple results, fit all in view
-        const coordinates = visibleLocations.map(loc => ({
+        setSelectedId(null);
+
+        const coordinates = filteredLocations.map((loc) => ({
           latitude: loc.latitude,
           longitude: loc.longitude,
         }));
+
         mapRef.current.fitToCoordinates(coordinates, {
           edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
           animated: true,
         });
       }
     } else if (!searchQuery && location) {
-      // When search is cleared, zoom back to user's location
-      mapRef.current.animateToRegion({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 1000);
-    }
-  }, [searchQuery, visibleLocations, location]);
+      setSelectedId(null);
 
-  // No active room - show placeholder (Figure 4.1.10 placeholder)
+      mapRef.current.animateToRegion(
+        {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        1000
+      );
+    }
+  }, [searchQuery, filteredLocations, location]);
+
   if (!activeRoom) {
     return (
       <View style={styles.emptyContainer}>
@@ -375,7 +434,6 @@ export default function MapRadarScreen() {
     );
   }
 
-  // Loading map
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -385,19 +443,15 @@ export default function MapRadarScreen() {
     );
   }
 
-  // Map failed to load
   if (!location) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Unable to load map</Text>
-        <Text style={styles.errorSubtext}>
-          Please enable location services
-        </Text>
+        <Text style={styles.errorSubtext}>Please enable location services</Text>
       </View>
     );
   }
 
-  // Room hasn't started yet - show locked view
   if (!roomHasStarted && activeRoom) {
     const timeUntilStart = getTimeUntilStart();
     const startDate = new Date(activeRoom.startDate);
@@ -418,13 +472,13 @@ export default function MapRadarScreen() {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
-              year: 'numeric'
+              year: 'numeric',
             })}
           </Text>
           <Text style={styles.eventInfoTime}>
-             {startDate.toLocaleTimeString('en-US', {
+            {startDate.toLocaleTimeString('en-US', {
               hour: '2-digit',
-              minute: '2-digit'
+              minute: '2-digit',
             })}
           </Text>
         </View>
@@ -464,7 +518,6 @@ export default function MapRadarScreen() {
         showsMyLocationButton={true}
         showsCompass={true}
       >
-
         <Circle
           center={{
             latitude: location.latitude,
@@ -476,82 +529,75 @@ export default function MapRadarScreen() {
           strokeWidth={2}
         />
 
-        {visibleLocations.map((attendee) => {
+        {filteredLocations.map((attendee) => {
           const isHostMarker = attendee.role === 'host';
-          const color = isHostMarker ? '#007AFF' : '#c73434';
+          const isPico = attendee.role === 'pico';
           const statusEmoji = getStatusEmoji(attendee.status);
           const statusLabel = getStatusLabel(attendee.status);
 
-          // Change color based on status
-          let markerColor = color;
-          if (attendee.status && attendee.status !== 'present') {
-            markerColor = '#ff9500'; // Orange for away statuses
+          let markerColor = isHostMarker ? '#007AFF' : '#c73434';
+          if (isPico) markerColor = '#34c759';
+          if (attendee.status && attendee.status !== 'present' && !isPico) {
+            markerColor = '#ff9500';
           }
           if (attendee.isOutsideGeofence) {
-            markerColor = '#ff3b30'; // Red for outside geofence
+            markerColor = '#ff3b30';
           }
 
-          return (
-            <Fragment key={attendee.userId}>
-              <Circle
-                center={{
-                  latitude: attendee.latitude,
-                  longitude: attendee.longitude,
-                }}
-                radius={3} // 3 meters - extra small for accuracy
-                fillColor={markerColor}
-                strokeColor="#fff"
-                strokeWidth={2}
-              />
+          const isSelected = selectedId === attendee.userId;
 
-              <Marker
-                coordinate={{
-                  latitude: attendee.latitude,
-                  longitude: attendee.longitude,
+          return (
+            <Marker
+              key={attendee.userId}
+              coordinate={{
+                latitude: attendee.latitude,
+                longitude: attendee.longitude,
+              }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              onPress={() =>
+                setSelectedId((prev) => (prev === attendee.userId ? null : attendee.userId))
+              }
+            >
+              <View
+                style={{
+                  width: isSelected ? MARKER_SIZE + 6 : MARKER_SIZE,
+                  height: isSelected ? MARKER_SIZE + 6 : MARKER_SIZE,
+                  borderRadius: isSelected ? (MARKER_SIZE + 6) / 2 : MARKER_SIZE / 2,
+                  backgroundColor: markerColor,
+                  borderWidth: 2,
+                  borderColor: '#fff',
                 }}
-                title={`${statusEmoji} ${attendee.username || 'Unknown'}`}
-                description={`${statusLabel}${attendee.isOutsideGeofence ? ' - Outside Safety Zone' : ''}${isHostMarker ? ' (Host)' : ''}`}
-                opacity={0}
               />
-            </Fragment>
+              <Callout tooltip>
+                <View style={styles.callout}>
+                  <Text style={styles.calloutTitle}>
+                    {statusEmoji} {attendee.username || 'Unknown'}
+                  </Text>
+                  <Text style={styles.calloutText}>{statusLabel}</Text>
+                  <Text style={styles.calloutText}>
+                    {isPico ? 'Pico Device' : isHostMarker ? 'Host' : 'Attendee'}
+                  </Text>
+                </View>
+              </Callout>
+            </Marker>
           );
         })}
-
-        {picoLocations.map((pico) => (
-          <Marker
-            key={`pico-${pico.nodeId}`}
-            coordinate={{
-              latitude: Number(pico.latitude),
-              longitude: Number(pico.longitude),
-            }}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <View style={styles.picoMarker} />
-            <Callout tooltip>
-              <View style={styles.callout}>
-                <Text style={styles.calloutText}>Pico {pico.userId ?? pico.nodeId}</Text>
-              </View>
-            </Callout>
-          </Marker>
-        ))}
       </MapView>
 
       <View style={styles.roomInfo}>
         <Text style={styles.roomName}>{activeRoom.name}</Text>
         {searchQuery ? (
           <Text style={styles.searchResultsText}>
-            {visibleLocations.length} {visibleLocations.length === 1 ? 'result' : 'results'} for "{searchQuery}"
+            {filteredLocations.length} {filteredLocations.length === 1 ? 'result' : 'results'} for "
+            {searchQuery}"
           </Text>
         ) : (
           <>
             <Text style={styles.attendeeCount}>
-              {visibleLocations.length} {visibleLocations.length === 1 ? 'person' : 'people'} visible
+              {combinedLocations.length} {combinedLocations.length === 1 ? 'person' : 'people'} visible
             </Text>
-            {!isHost && (
-              <Text style={styles.attendeeNote}>
-                (Showing hosts only)
-              </Text>
-            )}
+            {!isHost && <Text style={styles.attendeeNote}>(Showing hosts and picos)</Text>}
+            <Text style={styles.attendeeNote}>BLE: {bleStatus}</Text>
           </>
         )}
       </View>
@@ -817,24 +863,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  picoMarker: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#34c759',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  callout: {
-    backgroundColor: '#fff',
-    padding: 8,
-    borderRadius: 8,
-    minWidth: 100,
-  },
-  calloutText: {
-    fontWeight: '600',
-    fontSize: 13,
-  },
   roomInfo: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 120 : 100,
@@ -919,5 +947,20 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 14,
     color: '#F1F5F9',
+  },
+  callout: {
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 8,
+    minWidth: 120,
+  },
+  calloutTitle: {
+    fontWeight: '600',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  calloutText: {
+    fontWeight: '600',
+    fontSize: 13,
   },
 });
