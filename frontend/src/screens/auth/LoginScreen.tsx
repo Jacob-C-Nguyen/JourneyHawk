@@ -23,9 +23,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation, route }: Props) {
   const { role } = route.params;
-  const { login, error } = useAuth();
+  const { login } = useAuth();
   
-  const [emailOrUsername, setEmailOrUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -34,18 +34,16 @@ export default function LoginScreen({ navigation, route }: Props) {
   const roleLabel = isHost ? 'Host / Chaperone' : 'Attendee';
 
   const handleLogin = async () => {
-    if (!emailOrUsername || !password) {
+    if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
-    const result = await login({ emailOrUsername, password }, role);
+    const result = await login({ email, password }, role);
     setIsLoading(false);
 
-    if (result.success) {
-      // Navigation handled by AppNavigator
-    } else {
+    if (!result.success) {
       Alert.alert('Login Failed', result.error || 'Unknown error');
     }
   };
@@ -72,20 +70,21 @@ export default function LoginScreen({ navigation, route }: Props) {
               <Text style={styles.roleChipText}>{roleLabel}</Text>
             </View>
             <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to your {roleLabel.toLowerCase()} account</Text>
+            <Text style={styles.subtitle}>Sign in with your email address</Text>
           </View>
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.inputLabel}>Email or Username</Text>
+          <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
-              placeholder="Enter email or username"
+              placeholder="Enter your email"
               placeholderTextColor="#475569"
-              value={emailOrUsername}
-              onChangeText={setEmailOrUsername}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
+              keyboardType="email-address"
               autoCorrect={false}
             />
           </View>

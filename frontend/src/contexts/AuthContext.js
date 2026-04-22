@@ -30,8 +30,7 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data);
         SocketService.connect(token);
       }
-    } catch (error) {
-      console.error('Auth check error:', error);
+    } catch {
       await SecureStore.deleteItemAsync('userToken');
       setUser(null);
     } finally {
@@ -39,16 +38,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (userData) => {
+  const signup = async (verifiedData) => {
     try {
       setError(null);
-      const response = await authAPI.signup(userData);
-
-      await SecureStore.setItemAsync('userToken', response.data.token);
-      const { token, ...userWithoutToken } = response.data;
+      await SecureStore.setItemAsync('userToken', verifiedData.token);
+      const { token, ...userWithoutToken } = verifiedData;
       setUser(userWithoutToken);
-      SocketService.connect(response.data.token);
-
+      SocketService.connect(verifiedData.token);
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Signup failed';
@@ -83,14 +79,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      SocketService.disconnect();
-      await SecureStore.deleteItemAsync('userToken');
-      setUser(null);
-      setError(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    SocketService.disconnect();
+    await SecureStore.deleteItemAsync('userToken');
+    setUser(null);
+    setError(null);
   };
 
   const value = {

@@ -24,6 +24,9 @@ export default {
     },
   },
   extra: {
-    apiUrl: process.env.API_URL || 'http://10.0.2.2:3000/api',
+    apiUrl: process.env.API_URL || 'https://journeyhawk-backend.onrender.com/api',
+    eas: {
+      projectId: '4511ea27-3c63-4f1d-baa8-b389ec5299a1',
+    },
   },
 };

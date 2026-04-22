@@ -1,7 +1,3 @@
-// Functional Req 1: App opens from icon and brings user to login screen
-// Functional Req 2: Allows users to login with credentials
-// Functional Req 3: Guides unregistered users to create a new account
-// Contains: RoleSelectionScreen (first-time role selection), navigation to Login/SignUp
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,12 +8,14 @@ import { navigationRef } from './navigationRef';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
+import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 import TabNavigator from './TabNavigator';
 
 type RootStackParamList = {
   RoleSelection: undefined;
   Login: { role: string };
   SignUp: { role: string };
+  VerifyEmail: { email: string; role: string; signupData: any };
   MainApp: undefined;
 };
 
@@ -171,6 +169,7 @@ const styles = StyleSheet.create({
   },
   roleIcon: {
     fontSize: 24,
+    color: '#1E293B',
   },
   roleInfo: {
     flex: 1,
@@ -227,6 +226,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
           </>
         ) : (
           <Stack.Screen name="MainApp" component={TabNavigator} />

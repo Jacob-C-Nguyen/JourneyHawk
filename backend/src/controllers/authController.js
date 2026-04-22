@@ -1,5 +1,7 @@
 const User = require('../models/User');
+const PendingUser = require('../models/PendingUser');
 const generateToken = require('../utils/generateToken');
+const { sendOTPEmail } = require('../utils/emailService');
 
 const isEmailValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -8,58 +10,15 @@ const isPhoneValid = (phone) => {
   return /^\d{7,15}$/.test(digits);
 };
 
-// Req 3: Creates account with username, email, phone, password, and role
-exports.signup = async (req, res) => {
-  try {
-    const { username, email, password, phone, role } = req.body;
-
-    if (!isEmailValid(email)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
-    }
-
-    if (!isPhoneValid(phone)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid phone number' });
-    }
-
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
-    }
-
-    const user = await User.create({ username, email, password, phone, role: role || 'attendee' });
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        token,
-      },
-    });
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ success: false, message: 'Something went wrong' });
-  }
-};
-
-
-// Req 2: Validates credentials and returns JWT token with user role
 exports.login = async (req, res) => {
   try {
-    const { emailOrUsername, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!emailOrUsername || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email/username and password' });
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    // TODO: add rate limiting here - brute force is an obvious attack vector
-    const user = await User.findOne({
-      $or: [{ email: emailOrUsername }, { username: emailOrUsername }],
-    }).select('+password');
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -88,7 +47,94 @@ exports.login = async (req, res) => {
   }
 };
 
-// Req 1: Returns current user data from stored JWT so app can auto-login on launch
+exports.sendOTP = async (req, res) => {
+  try {
+    const { username, email, phone, password, role } = req.body;
+
+    if (!isEmailValid(email)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+    }
+
+    if (!isPhoneValid(phone)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid phone number' });
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await PendingUser.findOneAndUpdate(
+      { email },
+      {
+        username,
+        email,
+        phone,
+        password,
+        role: role || 'attendee',
+        otp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+      { upsert: true, new: true }
+    );
+
+    await sendOTPEmail(email, otp);
+
+    res.status(200).json({ success: true, message: 'Verification code sent to your email' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to send verification email' });
+  }
+};
+
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const pending = await PendingUser.findOne({ email });
+
+    if (!pending) {
+      return res.status(400).json({ success: false, message: 'No pending verification found. Please sign up again.' });
+    }
+
+    if (new Date() > pending.expiresAt) {
+      await PendingUser.deleteOne({ email });
+      return res.status(400).json({ success: false, message: 'Code expired. Please sign up again.' });
+    }
+
+    if (pending.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid code. Please try again.' });
+    }
+
+    const user = await User.create({
+      username: pending.username,
+      email: pending.email,
+      phone: pending.phone,
+      password: pending.password,
+      role: pending.role,
+    });
+
+    await PendingUser.deleteOne({ email });
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        token,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Verification failed' });
+  }
+};
+
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);

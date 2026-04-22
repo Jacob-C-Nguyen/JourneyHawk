@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   ActivityIndicator,
   Platform,
   Alert,
   AppState,
 } from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
-import Slider from '@react-native-community/slider';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom } from '../../contexts/RoomContext';
@@ -178,8 +178,7 @@ export default function MapRadarScreen() {
           );
         }
       );
-    } catch (error) {
-      console.error('Error initializing map:', error);
+    } catch {
       Alert.alert('Error', 'Could not load your location');
       setLoading(false);
     }
@@ -228,8 +227,6 @@ export default function MapRadarScreen() {
           'The host has ended this room. You have been automatically removed.',
           [{ text: 'OK', onPress: clearCurrentRoom }]
         );
-      } else {
-        console.error('Error fetching attendee locations:', error);
       }
     }
   };
@@ -299,16 +296,6 @@ export default function MapRadarScreen() {
       }
     });
   }, [combinedLocations, location, geofenceRadius, isHost]);
-
-  const getStatusEmoji = (status) => {
-    const statusMap = {
-      present: '',
-      'away-restroom': '(Restroom)',
-      'away-switching': '(Switching)',
-      'away-other': '(Away)',
-    };
-    return statusMap[status] ?? '';
-  };
 
   const getStatusLabel = (status) => {
     const statusMap = {
@@ -531,8 +518,6 @@ export default function MapRadarScreen() {
         {filteredLocations.map((attendee) => {
           const isHostMarker = attendee.role === 'host';
           const isPico = attendee.role === 'pico';
-          const statusEmoji = getStatusEmoji(attendee.status);
-          const statusLabel = getStatusLabel(attendee.status);
 
           let markerColor = isHostMarker ? '#007AFF' : '#c73434';
           if (isPico) markerColor = '#34c759';
@@ -567,21 +552,24 @@ export default function MapRadarScreen() {
                   borderColor: '#fff',
                 }}
               />
-              <Callout tooltip>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutTitle}>
-                    {statusEmoji} {attendee.username || 'Unknown'}
-                  </Text>
-                  <Text style={styles.calloutText}>{statusLabel}</Text>
-                  <Text style={styles.calloutText}>
-                    {isPico ? 'Pico Device' : isHostMarker ? 'Host' : 'Attendee'}
-                  </Text>
-                </View>
-              </Callout>
             </Marker>
           );
         })}
       </MapView>
+
+      {selectedId && (() => {
+        const selected = combinedLocations.find(a => a.userId === selectedId);
+        if (!selected) return null;
+        return (
+          <View style={styles.markerPanel}>
+            <Text style={styles.markerPanelName}>{selected.username || 'Unknown'}</Text>
+            <Text style={styles.markerPanelSub}>{getStatusLabel(selected.status)}</Text>
+            <Text style={styles.markerPanelSub}>
+              {selected.role === 'pico' ? 'Pico Device' : selected.role === 'host' ? 'Host' : 'Attendee'}
+            </Text>
+          </View>
+        );
+      })()}
 
       <View style={styles.roomInfo}>
         <Text style={styles.roomName}>{activeRoom.name}</Text>
@@ -604,16 +592,20 @@ export default function MapRadarScreen() {
       {isHost && (
         <View style={styles.geofenceControls}>
           <Text style={styles.geofenceLabel}>Geofence: {geofenceRadius}m</Text>
-          <Slider
-            style={{ width: 180 }}
-            minimumValue={10}
-            maximumValue={500}
-            step={10}
-            value={geofenceRadius}
-            onValueChange={(val) => setGeofenceRadius(val)}
-            minimumTrackTintColor="#007AFF"
-            maximumTrackTintColor="#ccc"
-          />
+          <View style={styles.geofenceButtons}>
+            <TouchableOpacity
+              style={styles.geofenceBtn}
+              onPress={() => setGeofenceRadius(r => Math.max(10, r - 10))}
+            >
+              <Text style={styles.geofenceBtnText}>−</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.geofenceBtn}
+              onPress={() => setGeofenceRadius(r => Math.min(500, r + 10))}
+            >
+              <Text style={styles.geofenceBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -853,6 +845,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     fontSize: 16,
+    color: '#1E293B',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -915,6 +908,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  geofenceButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  geofenceBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  geofenceBtnText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
   legend: {
     position: 'absolute',
     bottom: 20,
@@ -961,5 +972,29 @@ const styles = StyleSheet.create({
   calloutText: {
     fontWeight: '600',
     fontSize: 13,
+  },
+  markerPanel: {
+    position: 'absolute',
+    bottom: 145,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 12,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  markerPanelName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+  },
+  markerPanelSub: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
   },
 });

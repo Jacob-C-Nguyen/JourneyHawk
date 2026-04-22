@@ -2,11 +2,8 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
-// API_URL is set via the API_URL environment variable (in .env or shell).
-// Falls back to Railway production if not set.
-// Local dev example: add API_URL=http://192.168.x.x:3000/api to your .env file.
 const API_URL = Constants.expoConfig?.extra?.apiUrl
-  ?? 'https://journeyhawk-production.up.railway.app/api';
+  ?? 'https://journeyhawk-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -16,7 +13,6 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
-// Add token to requests automatically
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -24,40 +20,18 @@ api.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch (error) {
-      console.error('Error getting token:', error);
-    }
+    } catch {}
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response) {
-      // Server responded with error
-      console.error('API Error:', error.response.data);
-    } else if (error.request) {
-      // No response received
-      console.error('Network Error:', error.message);
-    } else {
-      console.error('Error:', error.message);
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Auth API calls
 export const authAPI = {
-  signup: async (userData) => {
-    const response = await api.post('/auth/signup', userData);
-    return response.data;
-  },
-
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
     return response.data;
@@ -68,9 +42,17 @@ export const authAPI = {
     return response.data;
   },
 
+  sendOTP: async (userData) => {
+    const response = await api.post('/auth/send-otp', userData);
+    return response.data;
+  },
+
+  verifyOTP: async (email, otp) => {
+    const response = await api.post('/auth/verify-otp', { email, otp });
+    return response.data;
+  },
 };
 
-// Room API calls
 export const roomAPI = {
   create: async (roomData) => {
     const response = await api.post('/rooms/create', roomData);
@@ -113,7 +95,6 @@ export const roomAPI = {
   },
 };
 
-// Location API calls
 export const locationAPI = {
   update: async (locationData) => {
     const response = await api.post('/location/update', locationData);
@@ -126,7 +107,6 @@ export const locationAPI = {
   },
 };
 
-// Notification API calls
 export const notificationAPI = {
   getAll: async () => {
     const response = await api.get('/notifications');

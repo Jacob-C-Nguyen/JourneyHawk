@@ -1,6 +1,3 @@
-// Req 6: Takes users to the notification screen when clicking the notification tab
-// Req 7: Allows host to send a new notification via the "+" button
-// Req 19: Notifications displayed with type filtering (message, alert, location_alert)
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -40,10 +37,8 @@ export default function NotificationsScreen() {
   const [recipientMode, setRecipientMode] = useState<'all' | 'individual'>('all');
   const [selectedAttendee, setSelectedAttendee] = useState<any>(null);
 
-  // Req 6: Only host of the active room can send notifications
   const isHost = activeRoom?.host?._id === user?._id;
 
-  // Req 6: Reload list and clear badge every time this tab comes into focus
   useFocusEffect(
     useCallback(() => {
       loadNotifications();
@@ -51,7 +46,6 @@ export default function NotificationsScreen() {
     }, [clearUnreadCount])
   );
 
-  // Req 6: Subscribe to real-time new-notification events for this user
   useEffect(() => {
     if (!user) return;
 
@@ -72,8 +66,7 @@ export default function NotificationsScreen() {
       setLoading(true);
       const response = await notificationAPI.getAll();
       setNotifications(response.data);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
+    } catch {
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,7 +82,6 @@ export default function NotificationsScreen() {
     setSelectedAttendee(null);
   };
 
-  // Req 7: Host sends notification to all attendees or a specific individual
   const handleSendNotification = async () => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -121,6 +113,7 @@ export default function NotificationsScreen() {
           title: notificationTitle,
           message: notificationMessage,
         });
+        closeModal();
         Alert.alert('Success', 'Notification sent to all attendees!');
       } else {
         await notificationAPI.send({
@@ -130,12 +123,10 @@ export default function NotificationsScreen() {
           title: notificationTitle,
           message: notificationMessage,
         });
+        closeModal();
         Alert.alert('Success', `Notification sent to ${selectedAttendee.username}!`);
       }
-
-      closeModal();
     } catch (error) {
-      console.error('Error sending notification:', error);
       Alert.alert('Error', 'Failed to send notification');
     } finally {
       setSending(false);
@@ -151,8 +142,6 @@ export default function NotificationsScreen() {
     } catch (error) {
       if (error.response?.status === 404) {
         setNotifications(prev => prev.filter(n => n._id !== id));
-      } else {
-        console.error('Error marking as read:', error);
       }
     }
   };
@@ -161,12 +150,9 @@ export default function NotificationsScreen() {
     try {
       await notificationAPI.delete(id);
       setNotifications(prev => prev.filter(n => n._id !== id));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
+    } catch {}
   };
 
-  // Req 19: Color-code notification cards by type
   const getNotificationColor = (type) => {
     switch (type) {
       case 'alert':
@@ -575,6 +561,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   textArea: {
     height: 100,

@@ -12,19 +12,18 @@ import {
   StatusBar,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/api';
 
 type RootStackParamList = {
   SignUp: { role: string };
   Login: { role: string };
+  VerifyEmail: { email: string; role: string; signupData: any };
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 export default function SignUpScreen({ navigation, route }: Props) {
   const { role } = route.params;
-  const { signup } = useAuth();
-  
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -65,19 +64,18 @@ export default function SignUpScreen({ navigation, route }: Props) {
     }
 
     setIsLoading(true);
-    const result = await signup({
-      username,
-      email,
-      phone,
-      password,
-      role,
-    });
-    setIsLoading(false);
-
-    if (!result.success) {
-      Alert.alert('Sign Up Failed', result.error || 'Unknown error');
+    try {
+      const result = await authAPI.sendOTP({ username, email, phone, password, role });
+      if (result.success) {
+        navigation.navigate('VerifyEmail', { email, role, signupData: { username, email, phone, password, role } });
+      } else {
+        Alert.alert('Sign Up Failed', result.message || 'Unknown error');
+      }
+    } catch (error: any) {
+      Alert.alert('Sign Up Failed', error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
     }
-    // On success, AuthContext sets user → AppNavigator redirects to MainApp
   };
 
   return (
