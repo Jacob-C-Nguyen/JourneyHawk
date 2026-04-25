@@ -1,4 +1,4 @@
-JourneyHawk is a app desigend to help teachers track students on field trips, and can be used on both "iOS" and "Android".
+JourneyHawk is an app designed to help teachers track students on field trips, and can be used on both "iOS" and "Android".
 
   Both install files can be found here: 
   
@@ -34,7 +34,7 @@ JourneyHawk is a app desigend to help teachers track students on field trips, an
   SETTING UP THE RASPBERRY PI PICO 2W + L76K WAVESHARE GPS MODULE:
 
     1) Download all files in the "pico" folder in the Github.
-    2) Assumble the pico (solder if needed) and plug the reciever into the waveshare module, and the waveshare module into the pico.
+    2) Assemble the pico (solder if needed) and plug the receiver into the waveshare module, and the waveshare module into the pico.
     3) Install Thonny and the firmware for the Raspberry pi pico model you have.
 
         - official guide for installation: https://projects.raspberrypi.org/en/projects/getting-started-with-the-pico/2 
