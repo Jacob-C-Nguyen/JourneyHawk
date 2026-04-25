@@ -1,4 +1,3 @@
-// src/screens/room/AttendeeDetailScreen.tsx
 // Functional Req 11: The application should allow the user to view an attendee's basic information
 // Functional Req 12: The application should allow the host to remove any registered attendee
 // - Shows attendee's username, email, phone, role, current status
@@ -27,6 +26,7 @@ export default function AttendeeDetailScreen({ route, navigation }) {
 
   const isHost = user?.role === 'host' && activeRoom?.host?._id === user?._id;
 
+  // Req 12: Removes attendee from the room via API and navigates back on success
   const handleRemove = () => {
     Alert.alert(
       'Remove Attendee',

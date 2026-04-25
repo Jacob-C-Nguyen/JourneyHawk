@@ -21,7 +21,7 @@ import {
     AppState,
     TouchableOpacity,
 } from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
+import MapView, { Marker, Circle, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRoom} from '../../contexts/RoomContext';
@@ -56,17 +56,116 @@ export default function MapRadarScreen() {
     const locationUpdateHandlerRef = useRef(null);
     const userLeftHandlerRef = useRef(null);
     const roomUsersRef = useRef({});
+    const [followId, setFollowId] = useState(null);
     
-    const roomUsers = {};
-    if (activeRoom?.attendees) {
-        activeRoom.attendees.forEach(a => { roomUsers[String(a.user_id)] = a.username; });
-    }
-    if (activeRoom?.host) {
-        roomUsers[String(activeRoom.host.user_id)] = activeRoom.host.username;
-    }
+    // for callout bubble
+    const markerRefs = useRef({});
+    
+    const roomUsers = React.useMemo(() => {
+        const users = {};
+
+        activeRoom?.attendees?.forEach(a => {
+            const id = a.user_id ?? a.userId;
+            if (id != null) {
+                users[String(id)] = a.username;
+            }
+        });
+
+        const hostId = activeRoom?.host?.user_id ?? activeRoom?.host?.userId;
+        if (hostId != null) {
+            users[String(hostId)] = activeRoom.host.username;
+        }
+
+        return users;
+    }, [activeRoom]);
+    
+    // SAFE visible locations (guarded)
+    const visibleLocations = location ? [
+      {
+        userId: user._id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        role: user.role,
+        username: user.username,
+        status: 'present',
+      },
+      ...attendeeLocations.filter(a => a.userId !== user._id),
+    ] : [];
+    
+    const checkOutside = (lat, lon) => {
+        if (!geofenceActive || !location) return false;
+        return getDistanceMeters(location.latitude, location.longitude, lat, lon) > geofenceRadius;
+    };
+    
+    // distance for geofence
+    const getDistanceMeters = (lat1, lon1, lat2, lon2) => {
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // SAFE combined locations (memoized)
+    const combinedLocations = React.useMemo(() => {
+        if (!location) return [];
+
+        const picoMap = new Map();
+
+        picoLocations.forEach(p => {
+            const lat = Number(p.latitude);
+            const lon = Number(p.longitude);
+            
+            const uid = p.userId != null ? String(p.userId) : null;
+            
+
+            if (isNaN(lat) || isNaN(lon)) return;
+
+            picoMap.set(p.nodeId, {
+                userId: uid ?? p.nodeId,
+                latitude: lat,
+                longitude: lon,
+                role: 'pico',
+                username: uid && roomUsers[uid]
+                    ? roomUsers[uid]
+                    : `Pico ${p.nodeId}`,
+                status: 'present',
+                isOutsideGeofence: checkOutside(lat, lon),
+            });
+        });
+
+        visibleLocations.forEach(p => picoMap.set(p.userId, p));
+
+        return Array.from(picoMap.values());
+    }, [picoLocations, attendeeLocations, location, geofenceRadius, geofenceActive]);
+    
+    const filteredLocations = React.useMemo(() => {
+        if (!searchQuery) return combinedLocations;
+
+        const q = searchQuery.toLowerCase();
+
+        return combinedLocations.filter(p =>
+            p.username?.toLowerCase().includes(q) ||
+            p.email?.toLowerCase().includes(q) ||
+            p.phone?.includes(searchQuery)
+        );
+    }, [searchQuery, combinedLocations]);
+    
+    const visibleCount = React.useMemo(() => {
+        return combinedLocations.filter(
+            p => p.userId !== user._id
+        ).length;
+    }, [combinedLocations, user._id]);
     
     const handleBLEData = (data) => {
-        //console.log("RECEIVED:", data);
+        console.log("BLE RAW:", data);
+        
+        console.log("nodeId:", data.nodeId);
+        console.log("userId:", data.userId, "type:", typeof data.userId);
         setBleStatus("Receiving");
         
         setPicoLocations((prev) => {
@@ -91,29 +190,25 @@ export default function MapRadarScreen() {
         });
     };
     
-    //restarts the app when necessary
+    
     useEffect(() => {
-        const subscription = AppState.addEventListener("change", (nextState) => {
-            console.log("APP STATE:", nextState);
-            
-            if (appState.current.match(/inactive|background/) && nextState === "active") {
-                console.log("App came to foreground: restart BLE");
-                
-                BLEService.stop();   // reset
-                BLEService.scan(handleBLEData);
-            }
-            
-            if (nextState === "background") {
-                console.log("App to background: stop BLE");
-                BLEService.stop();
-                stopFetchingLocations();
-            }
-            
-            appState.current = nextState;
-        });
-        
-        return () => subscription.remove();
-    }, []);
+      const subscription = AppState.addEventListener("change", (nextState) => {
+        if (appState.current.match(/inactive|background/) && nextState === "active") {
+          BLEService.stop();
+          setBleStatus("Scanning");
+          BLEService.scan(handleBLEData, activeRoom?.roomCode);
+        }
+
+        if (nextState === "background") {
+          BLEService.stop();
+          stopFetchingLocations();
+        }
+
+        appState.current = nextState;
+      });
+
+      return () => subscription.remove();
+    }, [activeRoom]);
     
     
     useEffect(() => {
@@ -142,62 +237,99 @@ export default function MapRadarScreen() {
             BLEService.stop();
         };
     }, [activeRoom]);
+  
+    
+    useEffect(() => {
+      if (!mapRef.current) return;
+
+      if (searchQuery && combinedLocations.length > 0) {
+        const match = combinedLocations.filter(p =>
+          p.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.phone?.includes(searchQuery)
+        );
+
+        if (match.length === 1) {
+          const person = match[0];
+          setSelectedId(person.userId);
+
+          mapRef.current.animateToRegion({
+            latitude: person.latitude,
+            longitude: person.longitude,
+            latitudeDelta: 0.002,
+            longitudeDelta: 0.002,
+          }, 500);
+
+        } else if (match.length > 1) {
+          setSelectedId(null);
+
+          const coordinates = match.map(p => ({
+            latitude: p.latitude,
+            longitude: p.longitude,
+          }));
+
+          mapRef.current.fitToCoordinates(coordinates, {
+            edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
+            animated: true,
+          });
+        }
+
+      } else if (followId) {
+          const target = combinedLocations.find(p => p.userId === followId);
+          
+          if (target) {
+              mapRef.current.animateToRegion({
+                  latitude: target.latitude,
+                  longitude: target.longitude,
+                  latitudeDelta: 0.002,
+                  longitudeDelta: 0.002,
+              }, 500);
+          }
+      }
+
+    }, [searchQuery, combinedLocations, location]);
     
     
     // Geofence
     useEffect(() => {
-        if (!geofenceActive || !isHost) return;
-        
-        const allLocations = [
-            ...attendeeLocations.filter(a => a.userId !== user._id),
-               ...picoLocations.map(p => ({
-                   userId: p.nodeId,
-                   latitude: Number(p.latitude),
-                   longitude: Number(p.longitude),
-                   username: `Pico ${p.userId ?? p.nodeId}`,
-               })),
-        ];
-        
-        allLocations.forEach(person => {
-            const outside = checkOutside(person.latitude, person.longitude);
-            if (outside && !alertedIds.current.has(person.userId)) {
-                alertedIds.current.add(person.userId);
-                Alert.alert('Geofence Alert', `${person.username} has left the boundary.`);
-            } else if (!outside) {
-                alertedIds.current.delete(person.userId);
-            }
-        });
-    }, [picoLocations, attendeeLocations, geofenceActive, location]);
-    
-    
-    useEffect(() => {
-        if (!searchQuery) { setSelectedId(null); return; }
-        
-        const match = combinedLocations?.filter(p =>
-                                                p.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                p.phone?.includes(searchQuery)
-                                                );
-        
-        if (match?.length === 1) {
-            setSelectedId(match[0].userId);
-            mapRef.current?.animateToRegion({
-                latitude: match[0].latitude,
-                longitude: match[0].longitude,
-                latitudeDelta: 0.002,
-                longitudeDelta: 0.002,
-            }, 500);
-        } else if (match?.length > 1) {
-            const coordinates = match.map(p => ({
-                latitude: p.latitude,
-                longitude: p.longitude,
-            }));
-            mapRef.current?.fitToCoordinates(coordinates, {
-                edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
-                animated: true,
-            });
+      if (!geofenceActive || !isHost || !location) return;
+
+      combinedLocations.forEach((person) => {
+        if (person.userId === user._id) return;
+
+        const outside = checkOutside(person.latitude, person.longitude);
+
+        if (outside && !alertedIds.current.has(person.userId)) {
+          alertedIds.current.add(person.userId);
+          Alert.alert('Geofence Alert', `${person.username} has left the boundary.`);
+        } else if (!outside) {
+          alertedIds.current.delete(person.userId);
         }
-    }, [searchQuery, picoLocations, attendeeLocations]);
+      });
+
+    }, [combinedLocations, location, geofenceRadius, geofenceActive]);
+    
+ 
+    useEffect(() => {
+      // Only run for attendees
+      if (!geofenceActive || isHost || !location) return;
+
+      const outside = checkOutside(location.latitude, location.longitude);
+
+      if (outside && !alertedIds.current.has(user._id)) {
+        alertedIds.current.add(user._id);
+
+        Alert.alert(
+          'Geofence Alert',
+          'You have left the allowed area.'
+        );
+
+      } else if (!outside) {
+        alertedIds.current.delete(user._id);
+      }
+
+    }, [location, geofenceRadius, geofenceActive]);
+    
     
     
     const initializeMap = async () => {
@@ -263,23 +395,6 @@ export default function MapRadarScreen() {
         return statusMap[status] || 'Present';
     };
     
-    // distance for geofence
-    const getDistanceMeters = (lat1, lon1, lat2, lon2) => {
-        const R = 6371000;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
-    
-    const checkOutside = (lat, lon) => {
-        if (!geofenceActive || !location) return false;
-        return getDistanceMeters(location.latitude, location.longitude, lat, lon) > geofenceRadius;
-    };
     
     const startFetchingLocations = () => {
         fetchAttendeeLocations();
@@ -463,36 +578,7 @@ export default function MapRadarScreen() {
                 );
     }
     
-    
-    
-    const visibleLocations = [
-        ...attendeeLocations.filter(a => a.userId !== user._id),
-    ];
-    
-    const picoMap = new Map();
-    picoLocations.forEach(p => {
-        picoMap.set(p.nodeId, {
-            userId: p.nodeId,
-            latitude: Number(p.latitude),
-            longitude: Number(p.longitude),
-            role: 'pico',
-            username:  roomUsers[String(p.userId)] ?? `Pico ${p.userId ?? p.nodeId}`,
-            status: 'present',
-            isOutsideGeofence: checkOutside(Number(p.latitude), Number(p.longitude)),
-            })
-    });
-    visibleLocations.forEach(p => picoMap.set(p.userId, p));
-    
-    const combinedLocations = Array.from(picoMap.values());
-    const visibleCount = combinedLocations.filter(p => p.userId !== user._id).length;
-    const filteredLocations = searchQuery
-    ? combinedLocations.filter(p =>
-                               p.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                               p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                               p.phone?.includes(searchQuery)
-                               )
-    : combinedLocations;
-    
+
     
     
     return (
@@ -512,11 +598,18 @@ export default function MapRadarScreen() {
             <MapView
             ref={mapRef}
             style={styles.map}
-            provider={PROVIDER_GOOGLE}
             initialRegion={location}
             showsUserLocation={true}
             showsMyLocationButton={true}
             showsCompass={true}
+            onPanDrag={() => {
+              setFollowId(null);
+            }}
+            onPress={() => {
+              if (selectedId) {
+                markerRefs.current[selectedId]?.hideCallout();
+                setSelectedId(null);
+                }}}
             >
             
             {geofenceActive && location && (
@@ -548,17 +641,16 @@ export default function MapRadarScreen() {
                 
                 return (
                         <Marker
-                        key={`${attendee.role}-${attendee.userId}`}
-                        coordinate={{
+                          key={`${attendee.role}-${attendee.userId}`}
+                          tracksViewChanges={false}
+                          ref={(ref) => {
+                            if (ref) markerRefs.current[attendee.userId] = ref;
+                          }}
+                          coordinate={{
                             latitude: attendee.latitude,
                             longitude: attendee.longitude,
-                        }}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        onPress={() => {
-                            setSelectedId(prev =>
-                                          prev === attendee.userId ? null : attendee.userId
-                                          );
-                        }}
+                          }}
+                          anchor={{ x: 0.5, y: 0.5 }}
                         >
                         <View
                         style={{
@@ -571,11 +663,28 @@ export default function MapRadarScreen() {
                         }}
                         />
                         <Callout tooltip>
+                          
+                          {/* Close Button */}
+                          <TouchableOpacity
+                            style={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 6,
+                              zIndex: 10,
+                            }}
+                            onPress={() => {
+                              markerRefs.current[attendee.userId]?.hideCallout();
+                              setSelectedId(null);
+                            }}
+                          >
+                            <Text style={{ fontSize: 14, fontWeight: 'bold' }}>✕</Text>
+                          </TouchableOpacity>
+                        
                         <View style={{
                             backgroundColor: 'white',
                             padding: 8,
                             borderRadius: 8,
-                            minWidth: 100,
+                            minWidth: 120,
                         }}>
                         <Text style={{ fontWeight: '600' }}>{attendee.username || "Unknown"}</Text>
                         <Text style={{ fontSize: 12, color: '#666' }}>{statusLabel}</Text>
@@ -607,6 +716,7 @@ export default function MapRadarScreen() {
                                  </>
                                  )}
             </View>
+            <Text style={styles.attendeeNote}>BLE: {bleStatus}</Text>
             
             {/* Legend - matching proposal Figure 4.1.10 */}
             <View style={styles.legend}>

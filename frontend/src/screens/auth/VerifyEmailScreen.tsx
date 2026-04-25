@@ -1,6 +1,4 @@
-// src/screens/auth/VerifyOTPScreen.tsx
-// Collects 6-digit OTP sent to user's email and verifies account
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,33 +15,29 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 
 type RootStackParamList = {
-  VerifyOTP: { email: string };
+  VerifyEmail: { email: string; role: string; signupData: any };
+  SignUp: { role: string };
 };
 
-type Props = NativeStackScreenProps<RootStackParamList, 'VerifyOTP'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'VerifyEmail'>;
 
-export default function VerifyOTPScreen({ navigation, route }: Props) {
-  const { email } = route.params;
-  const { verifyEmail } = useAuth();
+export default function VerifyEmailScreen({ navigation, route }: Props) {
+  const { email, role, signupData } = route.params;
+  const { signup } = useAuth();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const inputs = useRef<(TextInput | null)[]>([]);
+  const inputs = useRef<TextInput[]>([]);
 
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
+  const handleChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
 
-  const handleChange = (text: string, index: number) => {
-    if (!/^\d*$/.test(text)) return;
     const updated = [...otp];
-    updated[index] = text;
+    updated[index] = value;
     setOtp(updated);
-    if (text && index < 5) {
+
+    if (value && index < 5) {
       inputs.current[index + 1]?.focus();
     }
   };
@@ -57,32 +51,35 @@ export default function VerifyOTPScreen({ navigation, route }: Props) {
   const handleVerify = async () => {
     const code = otp.join('');
     if (code.length !== 6) {
-      Alert.alert('Error', 'Please enter the full 6-digit code');
+      Alert.alert('Error', 'Please enter the 6-digit code');
       return;
     }
 
-    setIsVerifying(true);
-    const result = await verifyEmail(email, code);
-    setIsVerifying(false);
+    setIsLoading(true);
+    try {
+      const result = await authAPI.verifyOTP(email, code);
+      setIsLoading(false);
 
-    if (!result.success) {
-      Alert.alert('Verification Failed', result.error || 'Invalid code');
-      setOtp(['', '', '', '', '', '']);
-      inputs.current[0]?.focus();
+      if (result.success) {
+        await signup(result.data);
+      } else {
+        Alert.alert('Verification Failed', result.message || 'Invalid code');
+      }
+    } catch (error: any) {
+      setIsLoading(false);
+      Alert.alert('Verification Failed', error.response?.data?.message || 'Something went wrong');
     }
-    // On success, AuthContext sets user → AppNavigator redirects to MainApp
   };
 
   const handleResend = async () => {
     setIsResending(true);
     try {
-      await authAPI.resendOtp(email);
-      setResendCooldown(60);
-      Alert.alert('Sent', 'A new code has been sent to your email');
-    } catch {
-      Alert.alert('Error', 'Failed to resend code. Please try again.');
-    } finally {
+      await authAPI.sendOTP(signupData);
       setIsResending(false);
+      Alert.alert('Code Sent', 'A new verification code has been sent to your email');
+    } catch {
+      setIsResending(false);
+      Alert.alert('Error', 'Failed to resend code. Please try again.');
     }
   };
 
@@ -94,25 +91,24 @@ export default function VerifyOTPScreen({ navigation, route }: Props) {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
+
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Check your email</Text>
-          <Text style={styles.subtitle}>
-            We sent a 6-digit code to{'\n'}
-            <Text style={styles.emailText}>{email}</Text>
-          </Text>
+          <Text style={styles.subtitle}>We sent a 6-digit code to</Text>
+          <Text style={styles.email}>{email}</Text>
         </View>
       </View>
 
-      <View style={styles.body}>
+      <View style={styles.formContainer}>
         <View style={styles.otpRow}>
-          {otp.map((digit, i) => (
+          {otp.map((digit, index) => (
             <TextInput
-              key={i}
-              ref={ref => { inputs.current[i] = ref; }}
-              style={[styles.otpBox, digit ? styles.otpBoxFilled : null]}
+              key={index}
+              ref={(ref) => { if (ref) inputs.current[index] = ref; }}
+              style={[styles.otpInput, digit ? styles.otpInputFilled : null]}
               value={digit}
-              onChangeText={text => handleChange(text, i)}
-              onKeyPress={e => handleKeyPress(e, i)}
+              onChangeText={(val) => handleChange(val, index)}
+              onKeyPress={(e) => handleKeyPress(e, index)}
               keyboardType="number-pad"
               maxLength={1}
               selectTextOnFocus
@@ -121,30 +117,26 @@ export default function VerifyOTPScreen({ navigation, route }: Props) {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, isVerifying && styles.buttonDisabled]}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleVerify}
-          disabled={isVerifying}
+          disabled={isLoading}
           activeOpacity={0.8}
         >
-          {isVerifying ? (
+          {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Verify Account</Text>
+            <Text style={styles.buttonText}>Verify Email</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.resendButton}
           onPress={handleResend}
-          disabled={isResending || resendCooldown > 0}
+          disabled={isResending}
         >
-          {isResending ? (
-            <ActivityIndicator color="#3B82F6" size="small" />
-          ) : (
-            <Text style={[styles.resendText, resendCooldown > 0 && styles.resendDisabled]}>
-              {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Didn't get it? Resend code"}
-            </Text>
-          )}
+          <Text style={styles.resendText}>
+            {isResending ? 'Sending...' : "Didn't receive it? Resend code"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -177,26 +169,24 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginTop: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 22,
   },
-  emailText: {
+  email: {
+    fontSize: 15,
     color: '#3B82F6',
-    fontWeight: '600',
+    fontWeight: '700',
+    marginTop: 4,
   },
-  body: {
-    flex: 1,
+  formContainer: {
     paddingHorizontal: 24,
     paddingTop: 40,
     alignItems: 'center',
@@ -204,21 +194,21 @@ const styles = StyleSheet.create({
   otpRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 36,
+    marginBottom: 32,
   },
-  otpBox: {
-    width: 46,
+  otpInput: {
+    width: 48,
     height: 56,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#334155',
     backgroundColor: '#1E293B',
-    textAlign: 'center',
-    fontSize: 22,
-    fontWeight: '700',
     color: '#F1F5F9',
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
   },
-  otpBoxFilled: {
+  otpInputFilled: {
     borderColor: '#3B82F6',
   },
   button: {
@@ -242,6 +232,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   resendButton: {
     marginTop: 24,
@@ -249,10 +240,7 @@ const styles = StyleSheet.create({
   },
   resendText: {
     color: '#3B82F6',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-  },
-  resendDisabled: {
-    color: '#475569',
   },
 });
