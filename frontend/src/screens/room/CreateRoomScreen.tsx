@@ -1,10 +1,5 @@
-// src/screens/room/CreateRoomScreen.js
-// Functional Req 18: Allows host to create an event/room with date, time, location
-// Functional Req 15: Room code generated for inviting attendees
-// - Form inputs: room name, location, start/end date-time, notes
-// - Optional geofence safety zone with configurable radius
-// - Auto-generates unique 8-character room code
-// - Uses native DateTimePicker for date/time selection
+// Req 18: Allows host to create an event with name, location, date/time, and notes
+// Req 15: Backend auto-generates a unique room code used to invite attendees
 import React, { useState } from 'react';
 import {
   View,
@@ -30,10 +25,6 @@ export default function CreateRoomScreen() {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
-  
-  // Geofence state - just radius, center follows host
-  const [geofenceEnabled, setGeofenceEnabled] = useState(false);
-  const [geofenceRadius, setGeofenceRadius] = useState('100'); // Default 100 meters
   
   // Date/Time states
   const [startDate, setStartDate] = useState(new Date());
@@ -81,13 +72,6 @@ export default function CreateRoomScreen() {
         startDate: startDate.toISOString(),
         endDate: hasEndDate ? endDate.toISOString() : undefined,
       };
-
-      // Add geofence if enabled
-      if (geofenceEnabled) {
-        roomData.geofence = {
-          radius: parseInt(geofenceRadius) || 100,
-        };
-      }
 
       const response = await roomAPI.create(roomData);
 
@@ -151,17 +135,16 @@ export default function CreateRoomScreen() {
             style={styles.dateTimeButton}
             onPress={() => setShowStartDatePicker(true)}
           >
-            <Text style={styles.dateTimeButtonText}>📅 {formatDate(startDate)}</Text>
+            <Text style={styles.dateTimeButtonText}>{formatDate(startDate)}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dateTimeButton}
             onPress={() => setShowStartTimePicker(true)}
           >
-            <Text style={styles.dateTimeButtonText}>🕐 {formatTime(startDate)}</Text>
+            <Text style={styles.dateTimeButtonText}>{formatTime(startDate)}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Start Date Picker */}
         {showStartDatePicker && (
           <DateTimePicker
             value={startDate}
@@ -180,7 +163,6 @@ export default function CreateRoomScreen() {
           />
         )}
 
-        {/* Start Time Picker */}
         {showStartTimePicker && (
           <DateTimePicker
             value={startDate}
@@ -222,11 +204,10 @@ export default function CreateRoomScreen() {
                 style={styles.dateTimeButton}
                 onPress={() => setShowEndTimePicker(true)}
               >
-                <Text style={styles.dateTimeButtonText}>🕐 {formatTime(endDate)}</Text>
+                <Text style={styles.dateTimeButtonText}>{formatTime(endDate)}</Text>
               </TouchableOpacity>
             </View>
 
-            {/* End Date Picker */}
             {showEndDatePicker && (
               <DateTimePicker
                 value={endDate}
@@ -246,7 +227,6 @@ export default function CreateRoomScreen() {
               />
             )}
 
-            {/* End Time Picker */}
             {showEndTimePicker && (
               <DateTimePicker
                 value={endDate}
@@ -277,39 +257,6 @@ export default function CreateRoomScreen() {
           numberOfLines={4}
           textAlignVertical="top"
         />
-
-        {/* Geofence Section */}
-        <Text style={[styles.label, { marginTop: 25 }]}>Safety Zone (Optional)</Text>
-        <Text style={styles.helperText}>
-          Get alerts when attendees stray too far from you during the event
-        </Text>
-
-        {/* Enable Geofence Checkbox */}
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setGeofenceEnabled(!geofenceEnabled)}
-        >
-          <View style={styles.checkbox}>
-            {geofenceEnabled && <View style={styles.checkboxChecked} />}
-          </View>
-          <Text style={styles.checkboxLabel}>Enable proximity alerts</Text>
-        </TouchableOpacity>
-
-        {geofenceEnabled && (
-          <View style={styles.radiusContainer}>
-            <Text style={styles.label}>Alert Distance (meters)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="100"
-              value={geofenceRadius}
-              onChangeText={setGeofenceRadius}
-              keyboardType="numeric"
-            />
-            <Text style={styles.helperText}>
-              🔔 You'll be alerted if attendees go beyond {geofenceRadius || '100'}m from you
-            </Text>
-          </View>
-        )}
 
         <TouchableOpacity
           style={[styles.createButton, loading && styles.buttonDisabled]}
@@ -421,9 +368,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 5,
     marginBottom: 10,
-  },
-  radiusContainer: {
-    marginTop: 15,
   },
   createButton: {
     backgroundColor: '#3B82F6',

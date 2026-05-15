@@ -1,0 +1,3 @@
+All "ble_[*]" files were taken from the pico-micropython-examples github page.
+    https://github.com/raspberrypi/pico-micropython-examples/blob/master/bluetooth/ble_advertising.py
+

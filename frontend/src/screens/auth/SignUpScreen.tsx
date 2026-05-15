@@ -1,8 +1,3 @@
-// src/screens/auth/SignUpScreen.tsx
-// Functional Req 3: Guides unregistered users to create a new account
-// - Collects username, email, phone, password, and confirm password
-// - Validates inputs (min lengths, email format, password match)
-// - Registers user with selected role (host/attendee) via backend API
 import React, { useState } from 'react';
 import {
   View,
@@ -15,22 +10,21 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  Keyboard,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/api';
 
 type RootStackParamList = {
   SignUp: { role: string };
   Login: { role: string };
-  VerifyOTP: { email: string };
+  VerifyEmail: { email: string; role: string; signupData: any };
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 export default function SignUpScreen({ navigation, route }: Props) {
   const { role } = route.params;
-  const { signup } = useAuth();
-  
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -71,19 +65,18 @@ export default function SignUpScreen({ navigation, route }: Props) {
     }
 
     setIsLoading(true);
-    const result = await signup({
-      username,
-      email,
-      phone,
-      password,
-      role,
-    });
-    setIsLoading(false);
-
-    if (!result.success) {
-      Alert.alert('Sign Up Failed', result.error || 'Unknown error');
+    try {
+      const result = await authAPI.sendOTP({ username, email, phone, password, role });
+      if (result.success) {
+        navigation.navigate('VerifyEmail', { email, role, signupData: { username, email, phone, password, role } });
+      } else {
+        Alert.alert('Sign Up Failed', result.message || 'Unknown error');
+      }
+    } catch (error: any) {
+      Alert.alert('Sign Up Failed', error.response?.data?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
     }
-    // On success, AuthContext sets user → AppNavigator redirects to MainApp
   };
 
   return (
@@ -95,7 +88,6 @@ export default function SignUpScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
-        {/* Header background wraps back button + header */}
         <View style={styles.headerBackground}>
           <TouchableOpacity
             style={styles.backButton}
@@ -113,7 +105,6 @@ export default function SignUpScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        {/* Form */}
         <View style={styles.formContainer}>
           <Text style={styles.inputLabel}>Username</Text>
           <View style={styles.inputWrapper}>
@@ -125,6 +116,8 @@ export default function SignUpScreen({ navigation, route }: Props) {
               onChangeText={setUsername}
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </View>
 
@@ -139,6 +132,8 @@ export default function SignUpScreen({ navigation, route }: Props) {
               autoCapitalize="none"
               keyboardType="email-address"
               autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </View>
 
@@ -151,6 +146,8 @@ export default function SignUpScreen({ navigation, route }: Props) {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </View>
 
@@ -164,6 +161,8 @@ export default function SignUpScreen({ navigation, route }: Props) {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
             <TouchableOpacity
               style={styles.eyeButton}
@@ -183,6 +182,8 @@ export default function SignUpScreen({ navigation, route }: Props) {
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
               autoCapitalize="none"
+              returnKeyType="done"
+            onSubmitEditing={Keyboard.dismiss}
             />
             <TouchableOpacity
               style={styles.eyeButton}
@@ -206,7 +207,6 @@ export default function SignUpScreen({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Footer links */}
         <View style={styles.footerContainer}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Login', { role })}
@@ -266,10 +266,6 @@ const styles = StyleSheet.create({
   roleChipHost: {
     borderColor: '#3B82F6',
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
-  },
-  roleChipEmoji: {
-    fontSize: 16,
-    marginRight: 8,
   },
   roleChipText: {
     color: '#E2E8F0',

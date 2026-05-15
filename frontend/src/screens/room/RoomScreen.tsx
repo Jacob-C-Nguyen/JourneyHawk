@@ -1,14 +1,3 @@
-// src/screens/room/RoomScreen.js
-// Functional Req 10: Switches user to room screen when clicking room tab
-// Functional Req 11: View attendee basic info (username, email, role) in room list
-// Functional Req 12: Host can delete room (removes all attendees)
-// Functional Req 13: Shows attendees joining in real-time via Socket.io
-// Functional Req 14: Hosts can join existing rooms via room code
-// - Displays all rooms user is in with attendee count, room code, date, notes
-// - Selected room indicator for map view
-// - Attendee status tracking (present, away-restroom, away-switching)
-// - Geofence safety zone display
-// - Create Room / Join Room options when no active room
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -32,14 +21,19 @@ import StatusSelector from '../../components/StatusSelector';
 export default function RoomScreen({ navigation, route }) {
   const { user } = useAuth();
   const { activeRoom, rooms, isTracking, isLoading, loadUserRooms, clearCurrentRoom, setCurrentRoom } = useRoom();
-  const [localRoom, setLocalRoom] = useState(activeRoom);
   const [userStatus, setUserStatus] = useState('present');
   const [attendeeModalRoom, setAttendeeModalRoom] = useState(null);
 
-  // Sync localRoom with activeRoom
+  // Sync open attendee modal with live rooms data (handles joins, leaves, removals)
   useEffect(() => {
-    setLocalRoom(activeRoom);
-  }, [activeRoom]);
+    if (!attendeeModalRoom) return;
+    const updated = rooms.find(r => r._id === attendeeModalRoom._id);
+    if (updated) {
+      setAttendeeModalRoom(updated);
+    } else {
+      setAttendeeModalRoom(null);
+    }
+  }, [rooms]);
 
   // Reload rooms whenever screen comes into focus
   useFocusEffect(
@@ -48,6 +42,7 @@ export default function RoomScreen({ navigation, route }) {
     }, [loadUserRooms])
   );
 
+  // Req 10/12: Host deletes room (Req 12) or attendee leaves (Req 10); refreshes room list after
   const handleLeaveRoom = async (room, isHost) => {
     if (!room) return;
 
@@ -127,6 +122,7 @@ export default function RoomScreen({ navigation, route }) {
 
         <FlatList
           data={rooms}
+          extraData={[rooms, activeRoom, isTracking]}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => {
             const isHost = item.host?._id === user?._id;
@@ -152,7 +148,7 @@ export default function RoomScreen({ navigation, route }) {
                   
                   {item.startDate && (
                     <Text style={styles.roomCardDate}>
-                      Calendar {new Date(item.startDate).toLocaleDateString('en-US', {
+                      {new Date(item.startDate).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
@@ -160,17 +156,17 @@ export default function RoomScreen({ navigation, route }) {
                       })}
                     </Text>
                   )}
-                  
+
                   <Text style={styles.roomCardAttendees}>
-                    Attendees {item.attendees?.length || 0} {item.attendees?.length === 1 ? 'person' : 'people'}
+                    {item.attendees?.length || 0} {item.attendees?.length === 1 ? 'person' : 'people'}
                   </Text>
-                  
+
                   {item.notes && (
                     <Text style={styles.roomCardNotes} numberOfLines={2}>
-                      Notes {item.notes}
+                      {item.notes}
                     </Text>
                   )}
-                  
+
                   {item.geofence && item.geofence.radius && (
                     <Text style={styles.roomCardGeofence}>
                       Safety zone: {item.geofence.radius}m from host
@@ -182,9 +178,8 @@ export default function RoomScreen({ navigation, route }) {
                       <Text style={styles.statusLabel}>Your Status:</Text>
                       <StatusSelector 
                         currentStatus={userStatus}
-                        onStatusChange={(status, reason) => {
+                        onStatusChange={(status) => {
                           setUserStatus(status);
-                          console.log('Status changed to:', status, reason);
                         }}
                       />
                     </View>
@@ -205,7 +200,7 @@ export default function RoomScreen({ navigation, route }) {
                   
                   {isSelected && (
                     <View style={styles.selectedIndicator}>
-                      <Text style={styles.selectedText}> Selected for Map View</Text>
+                      <Text style={styles.selectedText}>Selected for Map View</Text>
                     </View>
                   )}
 
@@ -249,7 +244,6 @@ export default function RoomScreen({ navigation, route }) {
           }
         />
 
-        {/* Attendee Modal */}
         <Modal
           visible={!!attendeeModalRoom}
           transparent
@@ -278,7 +272,7 @@ export default function RoomScreen({ navigation, route }) {
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity onPress={() => setAttendeeModalRoom(null)}>
-                    <Text style={styles.modalClose}>✕</Text>
+                    <Text style={styles.modalClose}>X</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -711,125 +705,10 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#3B82F6',
   },
-  roomName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  roomCode: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  trackingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    alignSelf: 'flex-start',
-  },
-  trackingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#34c759',
-    marginRight: 8,
-  },
-  trackingText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  section: {
-    flex: 1,
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#E2E8F0',
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  attendeeCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  attendeeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F1F5F9',
-    marginBottom: 4,
-  },
-  attendeeEmail: {
-    fontSize: 14,
-    color: '#94A3B8',
-  },
-  attendeeRole: {
-    fontSize: 12,
-    color: '#3B82F6',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  detailButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#3B82F6',
-  },
-  detailButtonText: {
-    color: '#3B82F6',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   emptyText: {
     textAlign: 'center',
     color: '#64748B',
     marginTop: 20,
-  },
-  leaveButton: {
-    backgroundColor: '#ff3b30',
-    padding: 15,
-    margin: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  deleteButton: {
-    backgroundColor: '#ff3b30',
-  },
-  leaveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   noRoomContainer: {
     flex: 1,

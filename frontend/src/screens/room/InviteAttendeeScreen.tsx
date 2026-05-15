@@ -1,4 +1,3 @@
-// src/screens/room/InviteAttendeeScreen.tsx
 // Functional Req 15: Host can invite an attendee by phone number
 import React, { useState } from 'react';
 import {

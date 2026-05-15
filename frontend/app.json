@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,17 +16,13 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.journeyhawk.app",
       "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking.",
+        "NSBluetoothPeripheralUsageDescription": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking.",
         "NSLocationWhenInUseUsageDescription": "JourneyHawk needs your location to keep you safe during trips.",
         "NSLocationAlwaysUsageDescription": "JourneyHawk needs your location to track your group even when the app is in the background.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "JourneyHawk needs your location to track your group for safety.",
-        "NSBluetoothAlwaysUsageDescription": "JourneyHawk uses Bluetooth to connect to nearby GPS devices.",
-        "NSBluetoothPeripheralUsageDescription": "JourneyHawk communicates with external Bluetooth devices.",
         "UIBackgroundModes": ["location"]
-      },
-      "config": {
-        "googleMapsApiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
       }
-    
     },
     "android": {
       "adaptiveIcon": {
@@ -35,27 +31,41 @@
       },
       "package": "com.journeyhawk.app",
       "permissions": [
-            "ACCESS_COARSE_LOCATION",
-            "ACCESS_FINE_LOCATION",
-            "ACCESS_BACKGROUND_LOCATION",
-            "BLUETOOTH",
-            "BLUETOOTH_ADMIN",
-            "BLUETOOTH_SCAN",
-            "BLUETOOTH_CONNECT",
-            "BLUETOOTH_ADVERTISE"
-          ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyC0TNQtyMvop4ioCfusJsVeMFX4ZTUKcJA"
-        }
-      },
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_ADVERTISE"
+      ],
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.20",
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ],
       "expo-secure-store",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": ["peripheral", "central"],
+          "bluetoothAlwaysPermission": "JourneyHawk uses Bluetooth to detect nearby Pico mesh nodes for group tracking."
+        }
+      ],
       "@react-native-community/datetimepicker",
       [
         "expo-location",

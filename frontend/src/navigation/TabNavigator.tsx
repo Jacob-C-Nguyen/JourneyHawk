@@ -1,10 +1,9 @@
-// src/navigation/TabNavigator.tsx
 import React from 'react';
 import { Text, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NotificationProvider } from '../contexts/NotificationContext';
+import { NotificationProvider, useNotification } from '../contexts/NotificationContext';
 
 // Import screens (React Native auto-resolves .tsx)
 import AccountScreen from '../screens/home/AccountScreen';
@@ -32,20 +31,18 @@ function RoomStack() {
   );
 }
 
-export default function TabNavigator() {
+function TabsWithBadge() {
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotification();
 
   return (
-    <NotificationProvider>
-      <Tab.Navigator
+    <Tab.Navigator
         screenOptions={{
           headerShown: false,
 
-          // Blue
           tabBarActiveTintColor: '#3B82F6',
           tabBarInactiveTintColor: '#64748B',
 
-          // Dark background
           tabBarStyle: {
             backgroundColor: '#1E293B',
             borderTopColor: '#334155',
@@ -86,6 +83,7 @@ export default function TabNavigator() {
           component={NotificationsScreen}
           options={{
             tabBarLabel: 'Alerts',
+            tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
             tabBarIcon: ({ color, size }) => (
               <Text style={{ fontSize: 20, color, fontWeight: 'bold' }}>!</Text>
             ),
@@ -102,6 +100,13 @@ export default function TabNavigator() {
           }}
         />
       </Tab.Navigator>
+  );
+}
+
+export default function TabNavigator() {
+  return (
+    <NotificationProvider>
+      <TabsWithBadge />
     </NotificationProvider>
   );
 }
